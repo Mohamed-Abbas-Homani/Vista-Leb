@@ -103,11 +103,6 @@ class Category(Base):
     )
     key = Column(String, nullable=False, unique=True)
     name = Column(String, nullable=False)
-    business_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("business.id", ondelete="CASCADE"),
-        nullable=False,
-    )
 
     # Relationships
     users = relationship("User", secondary=user_category, back_populates="categories")

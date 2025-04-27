@@ -63,7 +63,6 @@ def upgrade():
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             key VARCHAR NOT NULL UNIQUE,
             name VARCHAR NOT NULL,
-            business_id UUID NOT NULL,
             FOREIGN KEY (business_id) REFERENCES business(id) ON DELETE CASCADE
         );
     """)
