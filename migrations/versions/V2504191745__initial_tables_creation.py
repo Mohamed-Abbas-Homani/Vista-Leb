@@ -62,8 +62,7 @@ def upgrade():
         CREATE TABLE category (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             key VARCHAR NOT NULL UNIQUE,
-            name VARCHAR NOT NULL,
-            FOREIGN KEY (business_id) REFERENCES business(id) ON DELETE CASCADE
+            name VARCHAR NOT NULL
         );
     """)
 
