@@ -58,7 +58,9 @@ class UserRead(BaseModel):
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 async def create_user(user: UserCreate, db: db_dep):
     result = await db.execute(
-        select(User).filter((User.email == user.email) | (User.username == user.username))
+        select(User).filter(
+            (User.email == user.email) | (User.username == user.username)
+        )
     )
     db_user = result.scalars().first()
     if db_user:

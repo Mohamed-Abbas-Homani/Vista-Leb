@@ -13,6 +13,9 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
+from typing import Optional
+import uuid as uuid_pkg
 
 Base = declarative_base()
 
@@ -72,9 +75,7 @@ class User(Base):
 
 class Business(Base):
     __tablename__ = "business"
-    id = Column(
-        UUID(as_uuid=True), primary_key=True, server_default="uuid_generate_v4()"
-    )
+    id: Mapped[Optional[uuid_pkg.UUID]] = mapped_column(primary_key=True, unique=True, default=uuid_pkg.uuid4)
     email = Column(String, nullable=False, unique=True)
     password = Column(String, nullable=False)
     branch_name = Column(String, nullable=False)
@@ -90,7 +91,7 @@ class Business(Base):
 
     # Relationship with categories
     categories = relationship(
-        "Category", secondary=business_category, back_populates="businesses"
+        "Category", secondary=business_category, back_populates="businesses", lazy="selectin"
     )
     offers = relationship("BusinessOffer", back_populates="business")
     __table_args__ = (UniqueConstraint("email", name="unique_business_email"),)
