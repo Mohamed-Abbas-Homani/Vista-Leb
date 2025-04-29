@@ -43,8 +43,8 @@ class BusinessUpdate(BaseModel):
     targeted_gender: Optional[str] = None
     cover_photo: Optional[str] = None
     profile_photo: Optional[str] = None
-    start_hour: Optional[time] = None  # Changed to time
-    close_hour: Optional[time] = None  # Changed to time
+    start_hour: Optional[time] = None
+    close_hour: Optional[time] = None
     opening_days: Optional[str] = None
     categories: List[UUID]
 

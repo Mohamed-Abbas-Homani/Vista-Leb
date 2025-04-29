@@ -64,7 +64,7 @@ class User(Base):
 
     # Relationship with categories
     categories = relationship(
-        "Category", secondary=user_category, back_populates="users"
+        "Category", secondary=user_category, back_populates="users", lazy="selectin"
     )
 
     __table_args__ = (

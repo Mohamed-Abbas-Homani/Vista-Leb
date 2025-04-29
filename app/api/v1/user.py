@@ -5,8 +5,9 @@ from typing import List, Optional
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 
-from app.model.model import User
+from app.model.model import User, Category
 from app.core.db import db_dep
+from .category import CategoryRead
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -23,6 +24,7 @@ class UserCreate(BaseModel):
     price_range: Optional[str] = None
     gender: Optional[str] = None
     profile_photo: Optional[str] = None
+    categories: List[UUID] = []
 
 
 class UserUpdate(BaseModel):
@@ -36,6 +38,7 @@ class UserUpdate(BaseModel):
     price_range: Optional[str] = None
     gender: Optional[str] = None
     profile_photo: Optional[str] = None
+    categories: Optional[List[UUID]] = None
 
 
 class UserRead(BaseModel):
@@ -49,6 +52,7 @@ class UserRead(BaseModel):
     price_range: Optional[str]
     gender: Optional[str]
     profile_photo: Optional[str]
+    categories: List[CategoryRead]
 
     class Config:
         from_attributes = True
@@ -57,25 +61,79 @@ class UserRead(BaseModel):
 # --- ROUTES ---
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 async def create_user(user: UserCreate, db: db_dep):
-    result = await db.execute(
-        select(User).filter(
-            (User.email == user.email) | (User.username == user.username)
+    try:
+        # Check for existing user
+        existing = await db.execute(
+            select(User).filter(
+                (User.email == user.email) | (User.username == user.username)
+            )
         )
-    )
-    db_user = result.scalars().first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email or username already exists")
-    new_user = User(**user.dict())
-    db.add(new_user)
-    await db.commit()
-    await db.refresh(new_user)
-    return new_user
+        if existing.scalars().first():
+            raise HTTPException(status_code=400, detail="Email or username already exists")
+
+        # Validate categories
+        categories = []
+        if user.categories:
+            for cat_id in user.categories:
+                category = await db.execute(select(Category).filter(Category.id == cat_id))
+                category = category.scalars().first()
+                if not category:
+                    raise HTTPException(status_code=404, detail=f"Category {cat_id} not found")
+                categories.append(category)
+
+        # Create user
+        db_user = User(**user.model_dump(exclude={"categories"}))
+        db_user.categories = categories
+
+        db.add(db_user)
+        await db.commit()
+        await db.refresh(db_user)
+
+        return UserRead(
+            id=db_user.id,
+            email=db_user.email,
+            username=db_user.username,
+            phone_number=db_user.phone_number,
+            address=db_user.address,
+            age=db_user.age,
+            marital_status=db_user.marital_status,
+            price_range=db_user.price_range,
+            gender=db_user.gender,
+            profile_photo=db_user.profile_photo,
+            categories=[
+                CategoryRead(id=c.id, name=c.name, key=c.key)
+                for c in db_user.categories
+            ]
+        )
+
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/", response_model=List[UserRead])
 async def list_users(db: db_dep):
     result = await db.execute(select(User))
-    return result.scalars().all()
+    users = result.scalars().all()
+    return [
+        UserRead(
+            id=user.id,
+            email=user.email,
+            username=user.username,
+            phone_number=user.phone_number,
+            address=user.address,
+            age=user.age,
+            marital_status=user.marital_status,
+            price_range=user.price_range,
+            gender=user.gender,
+            profile_photo=user.profile_photo,
+            categories=[
+                CategoryRead(id=c.id, name=c.name, key=c.key)
+                for c in user.categories
+            ]
+        )
+        for user in users
+    ]
 
 
 @router.get("/{user_id}", response_model=UserRead)
@@ -84,20 +142,71 @@ async def get_user(user_id: UUID, db: db_dep):
     user = result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return user
+    return UserRead(
+        id=user.id,
+        email=user.email,
+        username=user.username,
+        phone_number=user.phone_number,
+        address=user.address,
+        age=user.age,
+        marital_status=user.marital_status,
+        price_range=user.price_range,
+        gender=user.gender,
+        profile_photo=user.profile_photo,
+        categories=[
+            CategoryRead(id=c.id, name=c.name, key=c.key)
+            for c in user.categories
+        ]
+    )
 
 
 @router.put("/{user_id}", response_model=UserRead)
 async def update_user(user_id: UUID, update: UserUpdate, db: db_dep):
-    result = await db.execute(select(User).filter(User.id == user_id))
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    for key, value in update.dict(exclude_unset=True).items():
-        setattr(user, key, value)
-    await db.commit()
-    await db.refresh(user)
-    return user
+    try:
+        result = await db.execute(select(User).filter(User.id == user_id))
+        user = result.scalars().first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Update basic fields
+        update_data = update.model_dump(exclude={"categories"}, exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(user, key, value)
+
+        # Update categories if provided
+        if update.categories is not None:
+            categories = []
+            for cat_id in update.categories:
+                category = await db.execute(select(Category).filter(Category.id == cat_id))
+                category = category.scalars().first()
+                if not category:
+                    raise HTTPException(status_code=404, detail=f"Category {cat_id} not found")
+                categories.append(category)
+            user.categories = categories
+
+        await db.commit()
+        await db.refresh(user)
+
+        return UserRead(
+            id=user.id,
+            email=user.email,
+            username=user.username,
+            phone_number=user.phone_number,
+            address=user.address,
+            age=user.age,
+            marital_status=user.marital_status,
+            price_range=user.price_range,
+            gender=user.gender,
+            profile_photo=user.profile_photo,
+            categories=[
+                CategoryRead(id=c.id, name=c.name, key=c.key)
+                for c in user.categories
+            ]
+        )
+
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
