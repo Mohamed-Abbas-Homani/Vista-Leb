@@ -12,8 +12,9 @@ from datetime import time, datetime
 from .category import (
     CategoryRead,
 )  # Assuming you have CategoryRead schema in category.py
+from .dependencies import current_user
 
-router = APIRouter(prefix="/businesses", tags=["Businesses"])
+router = APIRouter(prefix="/businesses", tags=["Businesses"], dependencies=[current_user])
 
 
 # --- SCHEMAS ---
