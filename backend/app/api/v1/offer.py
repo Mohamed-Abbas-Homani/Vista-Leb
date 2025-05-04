@@ -1,14 +1,13 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 
-from app.api.v1.dependencies import current_user
-from app.model.model import BusinessOffer  # Adjust the path if needed
-from app.core.db import db_dep  # Your db dependency
+from backend.app.api.v1.dependencies import current_user
+from backend.app.model.model import BusinessOffer  # Adjust the path if needed
+from backend.app.core.db import db_dep  # Your db dependency
 
 router = APIRouter(prefix="/offers", tags=["Offers"], dependencies=[current_user])
 

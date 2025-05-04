@@ -1,14 +1,12 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, status
 from typing import List, Optional
 from pydantic import BaseModel, EmailStr
-from sqlalchemy import select
 
-from app.model.model import Business, Category
-from app.core.db import db_dep
+from backend.app.model.model import Business, Category
+from backend.app.core.db import db_dep
 
-from datetime import time, datetime
+from datetime import time
 from .category import (
     CategoryRead,
 )  # Assuming you have CategoryRead schema in category.py
@@ -70,7 +68,6 @@ class BusinessRead(BaseModel):
 
 
 # --- ROUTES ---
-from datetime import datetime
 
 
 @router.post("/", response_model=BusinessRead, status_code=status.HTTP_201_CREATED)
@@ -181,12 +178,9 @@ async def get_business_by_id(business_id: UUID, db: db_dep):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-        
 
 
-from datetime import datetime
 from fastapi import HTTPException, status
-from typing import Optional
 from sqlalchemy.future import select
 
 @router.put("/{business_id}", response_model=BusinessRead)

@@ -1,14 +1,12 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
-from typing import List, Optional
-from pydantic import BaseModel
+from typing import List
 
-from app.api.v1.dependencies import current_user
-from app.api.v1.schemas.schemas import CategoryRead, CategoryCreate
-from app.model.model import Category  # Assuming you have Category model here
-from app.core.db import db_dep
+from backend.app.api.v1.dependencies import current_user
+from backend.app.api.v1.schemas.schemas import CategoryRead, CategoryCreate
+from backend.app.model.model import Category  # Assuming you have Category model here
+from backend.app.core.db import db_dep
 
 router = APIRouter(prefix="/categories", tags=["Categories"], dependencies=[current_user])
 
