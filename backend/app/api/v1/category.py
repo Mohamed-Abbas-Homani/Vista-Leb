@@ -8,9 +8,7 @@ from app.api.v1.schemas.schemas import CategoryRead, CategoryCreate
 from app.model.model import Category  # Assuming you have Category model here
 from app.core.db import db_dep
 
-router = APIRouter(
-    prefix="/categories", tags=["Categories"], dependencies=[auth_dep]
-)
+router = APIRouter(prefix="/categories", tags=["Categories"], dependencies=[auth_dep])
 
 
 # --- ROUTES ---

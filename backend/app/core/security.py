@@ -54,6 +54,7 @@ async def authenticate_token(request: Request, token: str = Depends(oauth2_schem
     except JWTError:
         raise credentials_exception
 
+
 def current_user(request: Request):
     if request.state.user is not None:
         return request.state.user

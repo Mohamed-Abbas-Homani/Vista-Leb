@@ -12,9 +12,7 @@ from .category import (
 )  # Assuming you have CategoryRead schema in category.py
 from .dependencies import auth_dep
 
-router = APIRouter(
-    prefix="/businesses", tags=["Businesses"], dependencies=[auth_dep]
-)
+router = APIRouter(prefix="/businesses", tags=["Businesses"], dependencies=[auth_dep])
 
 
 # --- SCHEMAS ---
