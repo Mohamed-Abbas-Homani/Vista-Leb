@@ -43,7 +43,7 @@ def create_application(
     settings: DatabaseSettings | AppSettings | EnvironmentSettings,
     run_migrations: bool = True,
     **kwargs: Any,
-) -> FastAPI:
+) -> FastAPI | None:
     """Creates and configures a FastAPI application based on the provided settings.
 
     This function initializes a FastAPI application and configures it with various settings
