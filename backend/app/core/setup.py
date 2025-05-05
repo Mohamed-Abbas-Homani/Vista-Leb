@@ -18,6 +18,7 @@ from .logger import logger
 from .middleware import setup_middlewares
 from fastapi.staticfiles import StaticFiles
 
+
 def lifespan_factory(
     settings, run_migrations: bool
 ) -> Callable[[FastAPI], AbstractAsyncContextManager[Any]]:

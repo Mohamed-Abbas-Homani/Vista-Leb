@@ -81,10 +81,12 @@ class CORSSettings(BaseSettings):
     def allow_headers(self):
         return self.ALLOW_HEADERS.split(",")
 
+
 class AuthSettings(BaseSettings):
     SECRET_KEY: str = config("SECRET_KEY")
     ALGORITHM: str = config("ALGORITHM", default="HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = config("ACCESS_TOKEN_EXPIRE_MINUTES", default=30)
+
 
 class Settings(
     AppSettings,
@@ -92,7 +94,7 @@ class Settings(
     EnvironmentSettings,
     LoggingSettings,
     CORSSettings,
-    AuthSettings
+    AuthSettings,
 ):
     pass
 

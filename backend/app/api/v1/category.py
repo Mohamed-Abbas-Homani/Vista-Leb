@@ -3,12 +3,15 @@ from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 from typing import List
 
-from app.api.v1.dependencies import current_user
+from app.api.v1.dependencies import auth_dep
 from app.api.v1.schemas.schemas import CategoryRead, CategoryCreate
 from app.model.model import Category  # Assuming you have Category model here
 from app.core.db import db_dep
 
-router = APIRouter(prefix="/categories", tags=["Categories"], dependencies=[current_user])
+router = APIRouter(
+    prefix="/categories", tags=["Categories"], dependencies=[auth_dep]
+)
+
 
 # --- ROUTES ---
 @router.post("/", response_model=CategoryRead, status_code=status.HTTP_201_CREATED)

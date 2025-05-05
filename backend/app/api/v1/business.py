@@ -10,9 +10,11 @@ from datetime import time
 from .category import (
     CategoryRead,
 )  # Assuming you have CategoryRead schema in category.py
-from .dependencies import current_user
+from .dependencies import auth_dep
 
-router = APIRouter(prefix="/businesses", tags=["Businesses"], dependencies=[current_user])
+router = APIRouter(
+    prefix="/businesses", tags=["Businesses"], dependencies=[auth_dep]
+)
 
 
 # --- SCHEMAS ---
@@ -78,10 +80,14 @@ async def create_business(business: BusinessCreate, db: db_dep):
             categories = []
             for cat_id in business.categories:
                 # Check if category exists in the DB
-                category = await db.execute(select(Category).filter(Category.id == cat_id))
+                category = await db.execute(
+                    select(Category).filter(Category.id == cat_id)
+                )
                 category = category.scalars().first()
                 if not category:
-                    raise HTTPException(status_code=404, detail=f"Category {cat_id} not found.")
+                    raise HTTPException(
+                        status_code=404, detail=f"Category {cat_id} not found."
+                    )
                 categories.append(category)
         else:
             raise HTTPException(status_code=400, detail="Categories are required.")
@@ -99,7 +105,7 @@ async def create_business(business: BusinessCreate, db: db_dep):
         db_business.categories = categories
         await db.merge(db_business)
         await db.commit()  # Assign categories after the business is created
-        
+
         # Create the response
         return BusinessRead(
             id=db_business.id,
@@ -131,7 +137,6 @@ async def create_business(business: BusinessCreate, db: db_dep):
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
-
 
 
 @router.get("/", response_model=List[BusinessRead])
@@ -183,6 +188,7 @@ async def get_business_by_id(business_id: UUID, db: db_dep):
 from fastapi import HTTPException, status
 from sqlalchemy.future import select
 
+
 @router.put("/{business_id}", response_model=BusinessRead)
 async def update_business(business_id: UUID, update: BusinessUpdate, db: db_dep):
     try:
@@ -195,7 +201,7 @@ async def update_business(business_id: UUID, update: BusinessUpdate, db: db_dep)
 
         # Get update data excluding categories (we'll handle them separately)
         update_data = update.model_dump(exclude={"categories"}, exclude_unset=True)
-        
+
         # Update the business with the new values
         for key, value in update_data.items():
             setattr(business, key, value)
@@ -205,12 +211,16 @@ async def update_business(business_id: UUID, update: BusinessUpdate, db: db_dep)
             categories = []
             for cat_id in update.categories:
                 # Check if the category exists in the DB
-                category = await db.execute(select(Category).filter(Category.id == cat_id))
+                category = await db.execute(
+                    select(Category).filter(Category.id == cat_id)
+                )
                 category = category.scalars().first()
                 if not category:
-                    raise HTTPException(status_code=404, detail=f"Category {cat_id} not found.")
+                    raise HTTPException(
+                        status_code=404, detail=f"Category {cat_id} not found."
+                    )
                 categories.append(category)
-            
+
             # Assign the valid categories to the business
             business.categories = categories
 
@@ -229,19 +239,25 @@ async def update_business(business_id: UUID, update: BusinessUpdate, db: db_dep)
             targeted_gender=business.targeted_gender,
             cover_photo=business.cover_photo,
             profile_photo=business.profile_photo,
-            start_hour=business.start_hour.strftime("%H:%M:%S") if business.start_hour else None,
-            close_hour=business.close_hour.strftime("%H:%M:%S") if business.close_hour else None,
+            start_hour=business.start_hour.strftime("%H:%M:%S")
+            if business.start_hour
+            else None,
+            close_hour=business.close_hour.strftime("%H:%M:%S")
+            if business.close_hour
+            else None,
             opening_days=business.opening_days,
-            categories=[CategoryRead(id=cat.id, key=cat.key, name=cat.name) for cat in business.categories],
+            categories=[
+                CategoryRead(id=cat.id, key=cat.key, name=cat.name)
+                for cat in business.categories
+            ],
         )
 
     except Exception as e:
         # If there is any error during commit or refresh, rollback and raise an HTTPException
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to update business: {str(e)}")
-
-
-
+        raise HTTPException(
+            status_code=500, detail=f"Failed to update business: {str(e)}"
+        )
 
 
 @router.delete("/{business_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -1,5 +1,8 @@
+from typing import Annotated
+
 from fastapi import Depends
 
-from app.core.security import get_current_user
+from app.core.security import authenticate_token, current_user
 
-current_user = Depends(get_current_user)
+auth_dep = Depends(authenticate_token)
+current_user_dep = Annotated[dict, Depends(current_user)]
