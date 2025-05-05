@@ -5,9 +5,9 @@ from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 
-from backend.app.api.v1.dependencies import current_user
-from backend.app.model.model import BusinessOffer  # Adjust the path if needed
-from backend.app.core.db import db_dep  # Your db dependency
+from app.api.v1.dependencies import current_user
+from app.model.model import BusinessOffer  # Adjust the path if needed
+from app.core.db import db_dep  # Your db dependency
 
 router = APIRouter(prefix="/offers", tags=["Offers"], dependencies=[current_user])
 

@@ -2,8 +2,8 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
-from backend.app.model.model import User, Category
-from backend.app.core.db import db_dep
+from app.model.model import User, Category
+from app.core.db import db_dep
 from .category import CategoryRead
 from .dependencies import current_user
 from .schemas.schemas import UserRead, UserUpdate

@@ -1,3 +1,4 @@
+import os
 from collections.abc import AsyncGenerator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Any
@@ -15,7 +16,7 @@ from .config import (
 from .db import run_async_migrations
 from .logger import logger
 from .middleware import setup_middlewares
-
+from fastapi.staticfiles import StaticFiles
 
 def lifespan_factory(
     settings, run_migrations: bool
@@ -71,6 +72,10 @@ def create_application(
 
     # Setup Routes
     application.include_router(router)
+    os.makedirs("uploads", exist_ok=True)
+
+    # Mount the static folder
+    application.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
     if isinstance(settings, EnvironmentSettings):
         if settings.ENVIRONMENT != EnvironmentOption.PRODUCTION:

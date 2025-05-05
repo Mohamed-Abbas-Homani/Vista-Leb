@@ -3,8 +3,8 @@ from fastapi import APIRouter, status
 from typing import List, Optional
 from pydantic import BaseModel, EmailStr
 
-from backend.app.model.model import Business, Category
-from backend.app.core.db import db_dep
+from app.model.model import Business, Category
+from app.core.db import db_dep
 
 from datetime import time
 from .category import (

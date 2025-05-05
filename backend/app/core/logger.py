@@ -2,7 +2,7 @@ import logging
 
 import colorlog
 
-from backend.app.core.config import settings
+from app.core.config import settings
 
 # Logging settings
 LOGGING_LEVEL = int(settings.LOGLEVEL.value)
