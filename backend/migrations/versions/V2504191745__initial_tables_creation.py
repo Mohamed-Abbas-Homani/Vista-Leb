@@ -27,10 +27,6 @@ def upgrade():
             password VARCHAR NOT NULL,
             phone_number VARCHAR,
             address TEXT,
-            age INTEGER,
-            marital_status VARCHAR,
-            price_range VARCHAR,
-            gender VARCHAR,
             profile_photo TEXT,
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -42,18 +38,27 @@ def upgrade():
     op.execute("""
         CREATE TABLE business (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            email VARCHAR NOT NULL UNIQUE,
-            password VARCHAR NOT NULL,
+            user_id UUID REFERENCES "user" (id),
             branch_name VARCHAR NOT NULL,
-            phone_number VARCHAR,
             hot_line VARCHAR,
             address TEXT,
             targeted_gender VARCHAR,
             cover_photo TEXT,
-            profile_photo TEXT,
             start_hour TIME,
             close_hour TIME,
             opening_days TEXT
+        );
+    """)
+
+    # Customer table
+    op.execute("""
+        CREATE TABLE customer (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            user_id UUID REFERENCES "user" (id),
+            marital_status VARCHAR,
+            age INTEGER,
+            price_range VARCHAR,
+            gender VARCHAR
         );
     """)
 
@@ -77,17 +82,6 @@ def upgrade():
         );
     """)
 
-    # Business-Category relationship
-    op.execute("""
-        CREATE TABLE business_category (
-            business_id UUID NOT NULL,
-            category_id UUID NOT NULL,
-            PRIMARY KEY (business_id, category_id),
-            FOREIGN KEY (business_id) REFERENCES business(id) ON DELETE CASCADE,
-            FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE CASCADE
-        );
-    """)
-
     # Business Offer table
     op.execute("""
         CREATE TABLE business_offer (
@@ -105,9 +99,9 @@ def upgrade():
 
 def downgrade():
     op.execute("DROP TABLE IF EXISTS business_offer;")
-    op.execute("DROP TABLE IF EXISTS business_category;")
     op.execute("DROP TABLE IF EXISTS user_category;")
     op.execute("DROP TABLE IF EXISTS category;")
     op.execute("DROP TABLE IF EXISTS business;")
+    op.execute("DROP TABLE IF EXISTS customer;")
     op.execute('DROP TABLE IF EXISTS "user";')
     op.execute('DROP EXTENSION IF EXISTS "uuid-ossp";')

@@ -63,7 +63,7 @@ class LoggingSettings(BaseSettings):
 class CORSSettings(BaseSettings):
     ALLOW_ORIGINS: str = config(
         "ALLOW_ORIGINS",
-        default="http://localhost:3000,https://automation.dev02.anywr-group.com/",
+        default="http://localhost:5173",
     )
     ALLOW_METHODS: str = config("ALLOW_METHODS", default="*")
     ALLOW_HEADERS: str = config("ALLOW_HEADERS", default="*")

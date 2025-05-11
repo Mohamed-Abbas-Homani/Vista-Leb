@@ -1,7 +1,7 @@
 # --- SCHEMAS ---
 from typing import Optional
 from uuid import UUID
-
+from datetime import datetime
 from pydantic import BaseModel, EmailStr
 
 
@@ -19,19 +19,30 @@ class CategoryRead(BaseModel):
         from_attributes = True
 
 
-class UserCreate(BaseModel):
-    email: EmailStr
-    username: str
-    password: str
-    phone_number: Optional[str] = None
-    address: Optional[str] = None
+class BusinessCreate(BaseModel):
+    branch_name: str
+    hot_line: Optional[str] = None
+    targeted_gender: Optional[str] = None
+    cover_photo: Optional[str] = None
+    start_hour: Optional[datetime] = None
+    close_hour: Optional[datetime] = None
+    opening_days: Optional[str] = None
+
+class CustomerCreate(BaseModel):
     age: Optional[int] = None
     marital_status: Optional[str] = None
     price_range: Optional[str] = None
     gender: Optional[str] = None
-    profile_photo: Optional[str] = None
-    categories: list[UUID] = []
 
+class UserCreate(BaseModel):
+    password: str
+    phone_number: Optional[str] = None
+    username: str
+    categories: list[UUID] = []
+    email: EmailStr
+    business: Optional[BusinessCreate] = None
+    customer: Optional[CustomerCreate] = None
+    address: Optional[str] = None
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
@@ -49,15 +60,10 @@ class UserUpdate(BaseModel):
 
 class UserRead(BaseModel):
     id: UUID
-    email: EmailStr
+    email: str
     username: str
-    phone_number: Optional[str]
-    address: Optional[str]
-    age: Optional[int]
-    marital_status: Optional[str]
-    price_range: Optional[str]
-    gender: Optional[str]
-    profile_photo: Optional[str]
+    phone_number: Optional[str] = None
+    address: Optional[str]= None
     categories: list[CategoryRead]
 
     class Config:

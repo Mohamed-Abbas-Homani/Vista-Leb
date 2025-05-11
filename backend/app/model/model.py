@@ -1,143 +1,125 @@
+from datetime import datetime, time
+from enum import Enum
+from typing import List, Optional
+
 from sqlalchemy import (
+    UUID,
     Column,
-    String,
-    Integer,
-    Text,
-    DateTime,
     ForeignKey,
-    Table,
-    UniqueConstraint,
+    String,
+    Text,
     Time,
+    Integer,
+    Table,
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from sqlalchemy.orm import Mapped, mapped_column
-from typing import Optional
-import uuid as uuid_pkg
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum
+from sqlalchemy.dialects.postgresql import UUID as PgUUID
 
-Base = declarative_base()
+from app.core.db import Base
 
-# Association tables for many-to-many relationships
+# Association table for many-to-many relationship between User and Category
 user_category = Table(
     "user_category",
     Base.metadata,
-    Column("user_id", UUID(as_uuid=True), ForeignKey("user.id"), primary_key=True),
-    Column(
-        "category_id", UUID(as_uuid=True), ForeignKey("category.id"), primary_key=True
-    ),
-)
-
-business_category = Table(
-    "business_category",
-    Base.metadata,
-    Column(
-        "business_id", UUID(as_uuid=True), ForeignKey("business.id"), primary_key=True
-    ),
-    Column(
-        "category_id", UUID(as_uuid=True), ForeignKey("category.id"), primary_key=True
-    ),
+    Column("user_id", PgUUID, ForeignKey("user.id"), primary_key=True),
+    Column("category_id", PgUUID, ForeignKey("category.id"), primary_key=True),
 )
 
 
 class User(Base):
     __tablename__ = "user"
-    id = Column(
-        UUID(as_uuid=True), primary_key=True, server_default="uuid_generate_v4()"
-    )
-    email = Column(String, nullable=False, unique=True)
-    username = Column(String, nullable=False, unique=True)
-    password = Column(String, nullable=False)
-    phone_number = Column(String)
-    address = Column(Text)
-    age = Column(Integer)
-    marital_status = Column(String)
-    price_range = Column(String)
-    gender = Column(String)
-    profile_photo = Column(Text)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-    )
-    deleted_at = Column(DateTime(timezone=True))
 
-    # Relationship with categories
-    categories = relationship(
-        "Category", secondary=user_category, back_populates="users", lazy="selectin"
+    id: Mapped[UUID] = mapped_column(
+        PgUUID, primary_key=True, server_default=func.uuid_generate_v4()
     )
+    email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    password: Mapped[str] = mapped_column(String, nullable=False)
+    phone_number: Mapped[Optional[str]] = mapped_column(String)
+    address: Mapped[Optional[str]] = mapped_column(Text)
+    profile_photo: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now()
+    )
+    deleted_at: Mapped[Optional[datetime]] = mapped_column()
 
-    __table_args__ = (
-        UniqueConstraint("email", name="unique_user_email"),
-        UniqueConstraint("username", name="unique_user_username"),
+    # Relationships
+    business: Mapped[Optional["Business"]] = relationship(back_populates="user")
+    customer: Mapped[Optional["Customer"]] = relationship(back_populates="user")
+    categories: Mapped[List["Category"]] = relationship(
+        secondary=user_category, back_populates="users", lazy="joined"
     )
 
 
 class Business(Base):
     __tablename__ = "business"
-    id: Mapped[Optional[uuid_pkg.UUID]] = mapped_column(
-        primary_key=True, unique=True, default=uuid_pkg.uuid4
-    )
-    email = Column(String, nullable=False, unique=True)
-    password = Column(String, nullable=False)
-    branch_name = Column(String, nullable=False)
-    phone_number = Column(String)
-    hot_line = Column(String)
-    address = Column(Text)
-    targeted_gender = Column(String)
-    cover_photo = Column(Text)
-    profile_photo = Column(Text)
-    start_hour = Column(Time)
-    close_hour = Column(Time)
-    opening_days = Column(Text)
 
-    # Relationship with categories
-    categories = relationship(
-        "Category",
-        secondary=business_category,
-        back_populates="businesses",
-        lazy="selectin",
+    id: Mapped[UUID] = mapped_column(
+        PgUUID, primary_key=True, server_default=func.uuid_generate_v4()
     )
-    offers = relationship("BusinessOffer", back_populates="business")
-    __table_args__ = (UniqueConstraint("email", name="unique_business_email"),)
+    user_id: Mapped[UUID] = mapped_column(PgUUID, ForeignKey("user.id"))
+    branch_name: Mapped[str] = mapped_column(String, nullable=False)
+    hot_line: Mapped[Optional[str]] = mapped_column(String)
+    address: Mapped[Optional[str]] = mapped_column(Text)
+    targeted_gender: Mapped[Optional[str]]
+    cover_photo: Mapped[Optional[str]] = mapped_column(Text)
+    start_hour: Mapped[Optional[time]] = mapped_column(Time)
+    close_hour: Mapped[Optional[time]] = mapped_column(Time)
+    opening_days: Mapped[Optional[str]] = mapped_column(Text)
+
+    # Relationships
+    user: Mapped["User"] = relationship(back_populates="business")
+    offers: Mapped[List["BusinessOffer"]] = relationship(back_populates="business")
+
+
+class Customer(Base):
+    __tablename__ = "customer"
+
+    id: Mapped[UUID] = mapped_column(
+        PgUUID, primary_key=True, server_default=func.uuid_generate_v4()
+    )
+    user_id: Mapped[UUID] = mapped_column(PgUUID, ForeignKey("user.id"))
+    marital_status: Mapped[Optional[str]]
+    age: Mapped[Optional[int]] = mapped_column(Integer)
+    price_range: Mapped[Optional[str]]
+    gender: Mapped[Optional[str]]
+
+    # Relationships
+    user: Mapped["User"] = relationship(back_populates="customer")
 
 
 class Category(Base):
     __tablename__ = "category"
-    id = Column(
-        UUID(as_uuid=True), primary_key=True, server_default="uuid_generate_v4()"
+
+    id: Mapped[UUID] = mapped_column(
+        PgUUID, primary_key=True, server_default=func.uuid_generate_v4()
     )
-    key = Column(String, nullable=False, unique=True)
-    name = Column(String, nullable=False)
+    key: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
 
     # Relationships
-    users = relationship("User", secondary=user_category, back_populates="categories")
-    businesses = relationship(
-        "Business", secondary=business_category, back_populates="categories"
+    users: Mapped[List["User"]] = relationship(
+        secondary=user_category, back_populates="categories"
     )
-
-    __table_args__ = (UniqueConstraint("key", name="unique_category_key"),)
 
 
 class BusinessOffer(Base):
     __tablename__ = "business_offer"
-    id = Column(
-        UUID(as_uuid=True), primary_key=True, server_default="uuid_generate_v4()"
-    )
-    business_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("business.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    name = Column(String, nullable=False)
-    description = Column(Text)
-    start_date = Column(DateTime(timezone=True), nullable=False)
-    end_date = Column(DateTime(timezone=True), nullable=False)
-    photo = Column(Text)
 
-    # Relationship with business
-    business = relationship("Business", back_populates="offers")
-
-    __table_args__ = (
-        UniqueConstraint("business_id", "name", name="unique_business_offer_name"),
+    id: Mapped[UUID] = mapped_column(
+        PgUUID, primary_key=True, server_default=func.uuid_generate_v4()
     )
+    business_id: Mapped[UUID] = mapped_column(PgUUID, ForeignKey("business.id"))
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    start_date: Mapped[datetime] = mapped_column(nullable=False)
+    end_date: Mapped[datetime] = mapped_column(nullable=False)
+    photo: Mapped[Optional[str]] = mapped_column(Text)
+
+    # Relationships
+    business: Mapped["Business"] = relationship(back_populates="offers")

@@ -7,7 +7,7 @@ from starlette import status
 from app.api.v1.schemas.schemas import UserRead, UserCreate, CategoryRead
 from app.core.db import db_dep
 from app.core.security import authenticate_user, create_access_token, get_password_hash
-from app.model.model import User, Category
+from app.model.model import User, Category, Business, Customer
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -22,7 +22,7 @@ async def login(db: db_dep, form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 @router.post("/signup", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-async def create_user(user: UserCreate, db: db_dep):
+async def create_user(user: UserCreate, is_business: bool, db: db_dep):
     try:
         # Check for existing user
         existing = await db.execute(
@@ -54,9 +54,13 @@ async def create_user(user: UserCreate, db: db_dep):
 
         # Create user with hashed password
         db_user = User(
-            **user.model_dump(exclude={"categories", "password"}),
-            password=hashed_password,
-        )
+            **user.model_dump(exclude={"categories", "password", "business", "customer"}),
+            password=hashed_password)
+        if is_business:
+                db_user.business = Business(**user.business.model_dump())
+        else:
+            db_user.customer = Customer(**user.customer.model_dump())
+
         db_user.categories = categories
 
         db.add(db_user)
@@ -69,11 +73,6 @@ async def create_user(user: UserCreate, db: db_dep):
             username=db_user.username,
             phone_number=db_user.phone_number,
             address=db_user.address,
-            age=db_user.age,
-            marital_status=db_user.marital_status,
-            price_range=db_user.price_range,
-            gender=db_user.gender,
-            profile_photo=db_user.profile_photo,
             categories=[
                 CategoryRead(id=c.id, name=c.name, key=c.key)
                 for c in db_user.categories
@@ -81,5 +80,6 @@ async def create_user(user: UserCreate, db: db_dep):
         )
 
     except Exception as e:
+        print(e)
         await db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
