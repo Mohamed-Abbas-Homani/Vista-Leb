@@ -35,6 +35,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div>
           <Link to="/login" style={{ marginRight: "1rem" }}>Login</Link>
           <Link to="/signup">Signup</Link>
+          <Link to="/about-us">About Us</Link>
         </div>
       </Nav>
       <Main>{children}</Main>

@@ -1,4 +1,3 @@
-// pages/Login.tsx
 import styled from "styled-components";
 import Layout from "../components/Layout";
 import { useState } from "react";
@@ -12,22 +11,43 @@ const Container = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #eef2f3, #8e9eab);
-  width: 100%;
-  height: 100%;
+  background: #f7f9fc;
+  padding: 2rem;
+
+  @media (max-width: 480px) {
+    padding: 1rem;
+  }
 `;
 
 const Form = styled.form`
-  backdrop-filter: blur(12px);
-  background-color: rgba(255, 255, 255, 0.4);
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
-  border-radius: 16px;
-  padding: 2.5rem;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 2.5rem 3rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  max-width: 360px;
   width: 100%;
-  max-width: 400px;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.6rem;
+
+  @media (max-width: 480px) {
+    padding: 2rem 2rem;
+    max-width: 100%;
+    border-radius: 16px;
+  }
+`;
+
+const Title = styled.h2`
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  color: #222222;
+  margin-bottom: 1rem;
+  letter-spacing: 1.2px;
+
+  @media (max-width: 480px) {
+    font-size: 1.6rem;
+  }
 `;
 
 const InputWrapper = styled.div`
@@ -39,37 +59,65 @@ const Icon = styled.div`
   top: 50%;
   left: 1rem;
   transform: translateY(-50%);
-  color: #555;
+  color: #a0a0a0;
+  font-size: 1.2rem;
+  pointer-events: none;
+  transition: color 0.3s ease;
 `;
 
 const Input = styled.input`
   width: 100%;
-  padding: 0.75rem 0.75rem 0.75rem 3rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  padding: 1rem 1rem 1rem 3.5rem;
+  border-radius: 14px;
+  border: 1.8px solid #d1d9e6;
   font-size: 1rem;
-  background-color: rgba(255, 255, 255, 0.6);
-  transition: all 0.3s ease;
+  color: #333333;
+  background: #fafafa;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+
+  &::placeholder {
+    color: #b0b9c4;
+    font-style: italic;
+  }
 
   &:focus {
-    border-color: #007bff;
     outline: none;
-    background-color: #fff;
+    border-color: #4a90e2;
+    background-color: #ffffff;
+  }
+
+  &:focus + ${Icon} {
+    color: #4a90e2;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.95rem;
   }
 `;
 
 const Button = styled.button<{ disabled?: boolean }>`
-  background-color: ${({ disabled }) => (disabled ? "#aaa" : "#007bff")};
-  color: white;
-  padding: 0.8rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: ${({ disabled }) => (disabled ? "#999999" : "#ffffff")};
+  background: ${({ disabled }) => (disabled ? "#cccccc" : "#4a90e2")};
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 18px;
   cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
-  transition: background-color 0.3s ease;
+  box-shadow: ${({ disabled }) =>
+    disabled ? "none" : "0 6px 15px rgba(74, 144, 226, 0.6)"};
+  transition: all 0.3s ease;
 
   &:hover {
-    background-color: ${({ disabled }) => (disabled ? "#aaa" : "#0056b3")};
+    background: ${({ disabled }) => (disabled ? "#cccccc" : "#357ABD")};
+    box-shadow: ${({ disabled }) =>
+      disabled ? "none" : "0 8px 20px rgba(53, 122, 189, 0.8)"};
+    transform: ${({ disabled }) => (disabled ? "none" : "scale(1.05)")};
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1rem;
   }
 `;
 
@@ -91,12 +139,16 @@ export default function Login() {
       params.append("client_id", "string");
       params.append("client_secret", "string");
 
-      const res = await axios.post("http://127.0.0.1:8000/api/v1/auth/login", params, {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          accept: "application/json",
-        },
-      });
+      const res = await axios.post(
+        "http://127.0.0.1:8000/api/v1/auth/login",
+        params,
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            accept: "application/json",
+          },
+        }
+      );
 
       console.log("Login success:", res.data);
       toast.success("Login successful!");
@@ -112,25 +164,22 @@ export default function Login() {
     <Layout>
       <ToastContainer />
       <Container>
-        <Form onSubmit={handleSubmit}>
-          <h2 style={{ textAlign: "center", marginBottom: "1rem" }}>Login</h2>
+        <Form onSubmit={handleSubmit} noValidate>
+          <Title>Welcome Back</Title>
           <InputWrapper>
-            <Icon>
-              <FaEnvelope />
-            </Icon>
             <Input
               type="email"
-              placeholder="Email"
+              placeholder="Email Address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
+            <Icon>
+              <FaEnvelope />
+            </Icon>
           </InputWrapper>
 
           <InputWrapper>
-            <Icon>
-              <FaLock />
-            </Icon>
             <Input
               type="password"
               placeholder="Password"
@@ -138,10 +187,13 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            <Icon>
+              <FaLock />
+            </Icon>
           </InputWrapper>
 
           <Button type="submit" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Logging in..." : "Sign In"}
           </Button>
         </Form>
       </Container>

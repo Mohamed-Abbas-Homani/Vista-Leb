@@ -1,7 +1,8 @@
 .carousel-container {
-  width: 1200px;
-  height: 200px;
-  margin: 0px auto;
+  width: 100%;           /* full width of parent */
+  max-width: 1200px;     /* max width like before */
+  aspect-ratio: 6 / 1;   /* approximate 1200/200 ratio */
+  margin: 0 auto;
   overflow: hidden;
   border-radius: 16px;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
