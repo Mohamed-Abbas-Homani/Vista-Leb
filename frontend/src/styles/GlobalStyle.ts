@@ -6,6 +6,7 @@ const GlobalStyle = createGlobalStyle`
   }
   body {
     margin: 0;
+    padding: 0;
     font-family: 'Segoe UI', sans-serif;
     background-color: ${({ theme }) => theme.bodyBg};
     color: ${({ theme }) => theme.textColor};

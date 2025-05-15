@@ -104,7 +104,7 @@ export default function Signup() {
     };
 
     try {
-      await axios.post("http://localhost:9000/api/v1/auth/signup", userPayload, {
+      await axios.post("http://127.0.0.1:8000/api/v1/auth/signup", userPayload, {
         params: { is_business: accountType === "business" },
       });
       alert("Signup successful!");
