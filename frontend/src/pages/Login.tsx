@@ -5,6 +5,7 @@ import axios from "axios";
 import { FaEnvelope, FaLock } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
 
 const Container = styled.div`
   min-height: 100vh;
@@ -122,6 +123,7 @@ const Button = styled.button<{ disabled?: boolean }>`
 `;
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -152,6 +154,10 @@ export default function Login() {
 
       console.log("Login success:", res.data);
       toast.success("Login successful!");
+      localStorage.setItem("access_token", res.data.access_token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      
+      navigate("/");
     } catch (err) {
       console.error("Login failed:", err);
       toast.error("Invalid credentials. Please try again.");

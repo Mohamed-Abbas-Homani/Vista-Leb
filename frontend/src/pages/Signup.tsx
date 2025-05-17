@@ -2,6 +2,7 @@ import styled from "styled-components";
 import Layout from "../components/Layout";
 import { useState, ChangeEvent, FormEvent } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 interface FormData {
   [key: string]: string | number | undefined;
@@ -142,6 +143,9 @@ const Button = styled.button`
 `;
 
 export default function Signup() {
+
+  const navigate = useNavigate();
+
   const [accountType, setAccountType] = useState<"customer" | "business">(
     "customer"
   );
@@ -185,11 +189,15 @@ export default function Signup() {
         params: { is_business: accountType === "business" },
       });
       alert("Signup successful!");
+      navigate("/login"); // redirects to home page
+
     } catch (error) {
       console.error(error);
       alert("Signup failed");
     }
   };
+
+
 
   return (
     <Layout>

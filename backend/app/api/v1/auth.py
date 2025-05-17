@@ -18,7 +18,22 @@ async def login(db: db_dep, form_data: OAuth2PasswordRequestForm = Depends()):
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     access_token = create_access_token(data={"sub": user.username, "id": str(user.id)})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+            "username": user.username,
+            "phone_number": user.phone_number,
+            "address": user.address,
+            "categories": [
+                CategoryRead(id=c.id, name=c.name, key=c.key)
+                for c in user.categories
+            ],
+            "cover_image": user.profile_photo,
+        }
+    }
 
 
 @router.post("/signup", response_model=UserRead, status_code=status.HTTP_201_CREATED)
