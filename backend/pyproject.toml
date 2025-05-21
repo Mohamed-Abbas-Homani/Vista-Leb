@@ -20,6 +20,7 @@ dependencies = [
     "python-jose>=3.4.0",
     "passlib[bcrypt]>=1.7.4",
     "python-multipart (>=0.0.20,<0.0.21)",
+    "bcrypt (<4.0)",
 ]
 
 # Fix: Tell poetry where to look for the main package (app/)
