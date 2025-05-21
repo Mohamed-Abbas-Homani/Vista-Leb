@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import defaultAvatar from "../assets/default-avatar.png";
+import useStore from "../store";
 
 const Wrapper = styled.div`
   display: flex;
@@ -161,7 +162,7 @@ interface User {
 }
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const {user, setUser} = useStore()
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -172,7 +173,6 @@ export default function Layout({ children }: { children: ReactNode }) {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
     setUser(null);
     navigate("/");
   };

@@ -6,6 +6,7 @@ import { FaEnvelope, FaLock } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
+import useStore from "../store";
 
 const Container = styled.div`
   min-height: 100vh;
@@ -127,7 +128,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const {setToken, setUser} = useStore()
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -154,8 +155,8 @@ export default function Login() {
 
       console.log("Login success:", res.data);
       toast.success("Login successful!");
-      localStorage.setItem("access_token", res.data.access_token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      setToken(res.data.access_token)
+      setUser(res.data.user)
       
       navigate("/");
     } catch (err) {

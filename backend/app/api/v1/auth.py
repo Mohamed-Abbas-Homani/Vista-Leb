@@ -31,7 +31,7 @@ async def login(db: db_dep, form_data: OAuth2PasswordRequestForm = Depends()):
                 CategoryRead(id=c.id, name=c.name, key=c.key)
                 for c in user.categories
             ],
-            "cover_image": user.profile_photo,
+            "profile_photo": user.profile_photo,
         }
     }
 
