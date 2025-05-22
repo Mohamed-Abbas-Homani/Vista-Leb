@@ -104,7 +104,7 @@ const LogoutButton = styled.button`
 `;
 
 const Main = styled.main`
-  padding: 2rem 4rem;
+  padding: 0.2rem 2rem;
   flex-grow: 1;
 `;
 

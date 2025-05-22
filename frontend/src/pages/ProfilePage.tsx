@@ -16,23 +16,34 @@ const Container = styled.div`
 `;
 
 const Card = styled.div`
+  position: relative;
   background: ${({ theme }) => theme.cardBg};
   border-radius: 20px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   padding: 2.5rem;
-  max-width: 720px;
+  max-width: 960px;
   width: 100%;
 `;
 
 const AvatarWrapper = styled.div`
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   position: relative;
 `;
 
+const Header = styled.div`
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: ${({ theme }) => theme.text};
+  z-index: 1000;
+`;
+
 const Avatar = styled.img`
-  width: 100px;
-  height: 100px;
+  width: 144px;
+  height: 144px;
   border-radius: 50%;
   object-fit: cover;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -43,12 +54,18 @@ const HiddenInput = styled.input`
   display: none;
 `;
 
+const FormGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+`;
+
 const Input = styled.input`
   width: 100%;
   padding: 0.75rem;
   border-radius: 8px;
   border: 1px solid #ccc;
-  margin-bottom: 1rem;
 `;
 
 const Label = styled.label`
@@ -66,7 +83,7 @@ const SaveButton = styled.button`
   cursor: pointer;
   font-weight: bold;
   transition: background 0.3s ease;
-  margin-top: 1rem;
+  margin-top: 2rem;
 
   &:hover {
     background-color: #3c38b4;
@@ -106,7 +123,10 @@ const ProfilePage = () => {
         `http://localhost:8000/api/v1/users/${id}?is_business=${!!formData.business}`,
         formData,
         {
-          headers: { "Authorization": `Bearer ${token}`, "Content-Type":"application/json" },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
       );
       setUser(response.data);
@@ -136,19 +156,19 @@ const ProfilePage = () => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
 
       const photo = res.data.profile_photo;
 
-    if (user) setUser({ ...user, profile_photo: photo });
+      if (user) setUser({ ...user, profile_photo: photo });
       setFormData((prev) => prev && { ...prev, profile_photo: photo });
     } catch {
       alert("Failed to upload photo.");
     }
-  };  
+  };
 
   if (!formData) return <Loading>Loading profile...</Loading>;
 
@@ -156,174 +176,260 @@ const ProfilePage = () => {
   const isCustomer = !!formData.customer;
 
   return (
-        <Layout>
-    <Container>
-      <Card>
-        <AvatarWrapper>
-          <Avatar
-            src={
-              formData.profile_photo
-                ? `http://localhost:8000${formData.profile_photo}`
-                : "https://via.placeholder.com/100"
-            }
-            alt="Profile"
-            onClick={handleAvatarClick}
-          />
-          <HiddenInput
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handlePhotoChange}
-          />
-        </AvatarWrapper>
+    <Layout>
+      <Container>
+        <Card>
+          <Header>Profile</Header>
 
-        <Label>Username</Label>
-        <Input name="username" value={formData.username} onChange={handleChange} />
+          <AvatarWrapper>
+            <Avatar
+              src={
+                formData.profile_photo
+                  ? `http://localhost:8000${formData.profile_photo}`
+                  : "https://via.placeholder.com/100"
+              }
+              alt="Profile"
+              onClick={handleAvatarClick}
+            />
+            <HiddenInput
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+            />
+          </AvatarWrapper>
 
-        <Label>Email</Label>
-        <Input name="email" type="email" value={formData.email} onChange={handleChange} />
+          <FormGrid>
+            <div>
+              <Label>Username</Label>
+              <Input
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label>Email</Label>
+              <Input
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label>Phone</Label>
+              <Input
+                name="phone_number"
+                value={formData.phone_number}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label>Address</Label>
+              <Input
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+              />
+            </div>
+          </FormGrid>
 
-        <Label>Phone</Label>
-        <Input name="phone_number" value={formData.phone_number} onChange={handleChange} />
+          {isCustomer && (
+            <>
+              <h3>Customer Info</h3>
+              <FormGrid>
+                <div>
+                  <Label>Gender</Label>
+                  <Input
+                    name="gender"
+                    value={formData.customer?.gender || ""}
+                    onChange={(e) =>
+                      setFormData(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            customer: {
+                              ...prev.customer,
+                              gender: e.target.value,
+                            },
+                          }
+                      )
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>Age</Label>
+                  <Input
+                    name="age"
+                    type="number"
+                    value={formData.customer?.age || ""}
+                    onChange={(e) =>
+                      setFormData(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            customer: {
+                              ...prev.customer,
+                              age: Number(e.target.value),
+                            },
+                          }
+                      )
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>Marital Status</Label>
+                  <Input
+                    name="marital_status"
+                    value={formData.customer?.marital_status || ""}
+                    onChange={(e) =>
+                      setFormData(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            customer: {
+                              ...prev.customer,
+                              marital_status: e.target.value,
+                            },
+                          }
+                      )
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>Price Range</Label>
+                  <Input
+                    name="price_range"
+                    value={formData.customer?.price_range || ""}
+                    onChange={(e) =>
+                      setFormData(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            customer: {
+                              ...prev.customer,
+                              price_range: e.target.value,
+                            },
+                          }
+                      )
+                    }
+                  />
+                </div>
+              </FormGrid>
+            </>
+          )}
 
-        <Label>Address</Label>
-        <Input name="address" value={formData.address} onChange={handleChange} />
+          {isBusiness && (
+            <>
+              <h3>Business Info</h3>
+              <FormGrid>
+                <div>
+                  <Label>Branch Name</Label>
+                  <Input
+                    name="branch_name"
+                    value={formData.business?.branch_name || ""}
+                    onChange={(e) =>
+                      setFormData(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            business: {
+                              ...prev.business,
+                              branch_name: e.target.value,
+                            },
+                          }
+                      )
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>Hotline</Label>
+                  <Input
+                    name="hot_line"
+                    value={formData.business?.hot_line || ""}
+                    onChange={(e) =>
+                      setFormData(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            business: {
+                              ...prev.business,
+                              hot_line: e.target.value,
+                            },
+                          }
+                      )
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>Start Hour</Label>
+                  <Input
+                    name="start_hour"
+                    type="time"
+                    value={formData.business?.start_hour?.slice(0, 5) || ""}
+                    onChange={(e) =>
+                      setFormData(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            business: {
+                              ...prev.business,
+                              start_hour: e.target.value,
+                            },
+                          }
+                      )
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>Close Hour</Label>
+                  <Input
+                    name="close_hour"
+                    type="time"
+                    value={formData.business?.close_hour?.slice(0, 5) || ""}
+                    onChange={(e) =>
+                      setFormData(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            business: {
+                              ...prev.business,
+                              close_hour: e.target.value,
+                            },
+                          }
+                      )
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>Opening Days</Label>
+                  <Input
+                    name="opening_days"
+                    value={formData.business?.opening_days || ""}
+                    onChange={(e) =>
+                      setFormData(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            business: {
+                              ...prev.business,
+                              opening_days: e.target.value,
+                            },
+                          }
+                      )
+                    }
+                  />
+                </div>
+              </FormGrid>
+            </>
+          )}
 
-        {isCustomer && (
-          <>
-            <Label>Gender</Label>
-            <Input
-              name="gender"
-              value={formData.customer?.gender || ""}
-              onChange={(e) =>
-                setFormData((prev) =>
-                  prev && {
-                    ...prev,
-                    customer: { ...prev.customer, gender: e.target.value },
-                  }
-                )
-              }
-            />
-            <Label>Age</Label>
-            <Input
-              name="age"
-              type="number"
-              value={formData.customer?.age || ""}
-              onChange={(e) =>
-                setFormData((prev) =>
-                  prev && {
-                    ...prev,
-                    customer: { ...prev.customer, age: Number(e.target.value) },
-                  }
-                )
-              }
-            />
-            <Label>Marital Status</Label>
-            <Input
-              name="marital_status"
-              value={formData.customer?.marital_status || ""}
-              onChange={(e) =>
-                setFormData((prev) =>
-                  prev && {
-                    ...prev,
-                    customer: { ...prev.customer, marital_status: e.target.value },
-                  }
-                )
-              }
-            />
-            <Label>Price Range</Label>
-            <Input
-              name="price_range"
-              value={formData.customer?.price_range || ""}
-              onChange={(e) =>
-                setFormData((prev) =>
-                  prev && {
-                    ...prev,
-                    customer: { ...prev.customer, price_range: e.target.value },
-                  }
-                )
-              }
-            />
-          </>
-        )}
-
-        {isBusiness && (
-          <>
-            <Label>Branch Name</Label>
-            <Input
-              name="branch_name"
-              value={formData.business?.branch_name || ""}
-              onChange={(e) =>
-                setFormData((prev) =>
-                  prev && {
-                    ...prev,
-                    business: { ...prev.business, branch_name: e.target.value },
-                  }
-                )
-              }
-            />
-            <Label>Hotline</Label>
-            <Input
-              name="hot_line"
-              value={formData.business?.hot_line || ""}
-              onChange={(e) =>
-                setFormData((prev) =>
-                  prev && {
-                    ...prev,
-                    business: { ...prev.business, hot_line: e.target.value },
-                  }
-                )
-              }
-            />
-            <Label>Start Hour</Label>
-            <Input
-              name="start_hour"
-              type="time"
-              value={formData.business?.start_hour?.slice(0, 5) || ""}
-              onChange={(e) =>
-                setFormData((prev) =>
-                  prev && {
-                    ...prev,
-                    business: { ...prev.business, start_hour: e.target.value },
-                  }
-                )
-              }
-            />
-            <Label>Close Hour</Label>
-            <Input
-              name="close_hour"
-              type="time"
-              value={formData.business?.close_hour?.slice(0, 5) || ""}
-              onChange={(e) =>
-                setFormData((prev) =>
-                  prev && {
-                    ...prev,
-                    business: { ...prev.business, close_hour: e.target.value },
-                  }
-                )
-              }
-            />
-            <Label>Opening Days</Label>
-            <Input
-              name="opening_days"
-              value={formData.business?.opening_days || ""}
-              onChange={(e) =>
-                setFormData((prev) =>
-                  prev && {
-                    ...prev,
-                    business: { ...prev.business, opening_days: e.target.value },
-                  }
-                )
-              }
-            />
-          </>
-        )}
-
-        <SaveButton onClick={handleSave} disabled={loading}>
-          {loading ? "Saving..." : "Save Changes"}
-        </SaveButton>
-      </Card>
-    </Container>
+          <SaveButton onClick={handleSave} disabled={loading}>
+            {loading ? "Saving..." : "Save Changes"}
+          </SaveButton>
+        </Card>
+      </Container>
     </Layout>
   );
 };
