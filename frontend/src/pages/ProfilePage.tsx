@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import { useEffect, useRef, useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
 import useStore from "../store";
 import { User } from "../types/user";
 import axios from "axios";
@@ -130,7 +131,8 @@ const ProfilePage = () => {
         }
       );
       setUser(response.data);
-      alert("Profile updated!");
+      // alert("Profile updated!");
+      toast.success("Profile updated successfully!");
     } catch (error) {
       alert("Failed to update profile.");
     } finally {
@@ -177,6 +179,7 @@ const ProfilePage = () => {
 
   return (
     <Layout>
+      <ToastContainer />
       <Container>
         <Card>
           <Header>Profile</Header>

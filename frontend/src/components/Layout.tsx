@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import { motion, AnimatePresence } from "framer-motion";
 import defaultAvatar from "../assets/default-avatar.png";
 import useStore from "../store";
 
@@ -35,6 +36,10 @@ const NavButtons = styled.div`
   display: flex;
   align-items: center;
   gap: 0.8rem;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const NavLinkButton = styled(Link)`
@@ -156,10 +161,6 @@ const FooterBottom = styled.div`
   padding-top: 1rem;
 `;
 
-interface User {
-  username: string;
-  profile_photo?: string;
-}
 const UsernameLink = styled(Link)`
   font-weight: 600;
   color: #333;
@@ -172,9 +173,48 @@ const UsernameLink = styled(Link)`
   }
 `;
 
+const MenuButton = styled.button`
+  display: none;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  padding: 0.5rem 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  @media (max-width: 768px) {
+    display: block;
+  }
+
+  &:hover {
+    background: #0f9d76;
+  }
+`;
+
+const MobileNavMenu = styled(motion.div)`
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1rem;
+  background: white;
+  position: absolute;
+  top: 72px;
+  right: 2rem;
+  z-index: 9;
+  border: 1px solid #ddd;
+  border-radius: 1rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+
+  a, button {
+    font-size: 0.95rem;
+  }
+`;
+
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, setUser } = useStore();
   const navigate = useNavigate();
+  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -192,22 +232,42 @@ export default function Layout({ children }: { children: ReactNode }) {
     <Wrapper>
       <Nav>
         <TitleLink to="/">VISTA LEB</TitleLink>
-        {user ? (
+        {!user && (
+          <>
+            <NavButtons>
+              <NavLinkButton to="/about-us">About</NavLinkButton>
+              <NavLinkButton to="/contact-us">Contact Us</NavLinkButton>
+              <NavLinkButton to="/login">Login</NavLinkButton>
+              <PrimaryNavButton to="/signup">Signup</PrimaryNavButton>
+            </NavButtons>
+            <MenuButton onClick={() => setShowMenu((prev) => !prev)}>Menu</MenuButton>
+            <AnimatePresence>
+              {showMenu && (
+                <MobileNavMenu
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <NavLinkButton to="/about-us" onClick={() => setShowMenu(false)}>About</NavLinkButton>
+                  <NavLinkButton to="/contact-us" onClick={() => setShowMenu(false)}>Contact Us</NavLinkButton>
+                  <NavLinkButton to="/login" onClick={() => setShowMenu(false)}>Login</NavLinkButton>
+                  <PrimaryNavButton to="/signup" onClick={() => setShowMenu(false)}>Signup</PrimaryNavButton>
+                </MobileNavMenu>
+              )}
+            </AnimatePresence>
+          </>
+        )}
+        {user && (
           <UserSection>
             <Link to={`/profile/${user.id}`}>
-              <Avatar src={user.profile_photo ? `http://localhost:8000${user.profile_photo}`: defaultAvatar} alt="avatar" />
+              <Avatar src={user.profile_photo ? `http://localhost:8000${user.profile_photo}` : defaultAvatar} alt="avatar" />
             </Link>
             <UsernameLink to={`/profile/${user.id}`}>
               {user.username}
             </UsernameLink>
             <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
           </UserSection>
-        ) : (
-          <NavButtons>
-            <NavLinkButton to="/about-us">About</NavLinkButton>
-            <NavLinkButton to="/login">Login</NavLinkButton>
-            <PrimaryNavButton to="/signup">Signup</PrimaryNavButton>
-          </NavButtons>
         )}
       </Nav>
 
