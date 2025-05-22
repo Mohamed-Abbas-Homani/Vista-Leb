@@ -1,6 +1,7 @@
 backend/.venv
 backend/.env
 backend/poetry.lock
+backend/uploads
 .idea/
 **/__pycache__/
 # Logs
