@@ -11,9 +11,6 @@ const Container = styled.div`
   gap: 2rem;
 `;
 
-
-
-
 const Title = styled.h1`
   font-size: 2rem;
   font-weight: bold;

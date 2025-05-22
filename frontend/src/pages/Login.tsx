@@ -128,7 +128,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const {setToken, setUser} = useStore()
+  const { setToken, setUser } = useStore();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -153,11 +153,9 @@ export default function Login() {
         }
       );
 
-      console.log("Login success:", res.data);
       toast.success("Login successful!");
-      setToken(res.data.access_token)
-      setUser(res.data.user)
-      
+      setToken(res.data.access_token);
+      setUser(res.data.user);
       navigate("/");
     } catch (err) {
       console.error("Login failed:", err);

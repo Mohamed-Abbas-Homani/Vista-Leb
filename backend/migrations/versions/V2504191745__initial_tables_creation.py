@@ -44,8 +44,8 @@ def upgrade():
             address TEXT,
             targeted_gender VARCHAR,
             cover_photo TEXT,
-            start_hour TIME,
-            close_hour TIME,
+            start_hour TEXT,
+            close_hour TEXT,
             opening_days TEXT
         );
     """)

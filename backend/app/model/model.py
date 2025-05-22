@@ -49,8 +49,8 @@ class User(Base):
     deleted_at: Mapped[Optional[datetime]] = mapped_column()
 
     # Relationships
-    business: Mapped[Optional["Business"]] = relationship(back_populates="user")
-    customer: Mapped[Optional["Customer"]] = relationship(back_populates="user")
+    business: Mapped[Optional["Business"]] = relationship(back_populates="user", lazy="joined")
+    customer: Mapped[Optional["Customer"]] = relationship(back_populates="user", lazy="joined")
     categories: Mapped[List["Category"]] = relationship(
         secondary=user_category, back_populates="users", lazy="joined"
     )
@@ -68,8 +68,8 @@ class Business(Base):
     address: Mapped[Optional[str]] = mapped_column(Text)
     targeted_gender: Mapped[Optional[str]]
     cover_photo: Mapped[Optional[str]] = mapped_column(Text)
-    start_hour: Mapped[Optional[time]] = mapped_column(Time)
-    close_hour: Mapped[Optional[time]] = mapped_column(Time)
+    start_hour: Mapped[Optional[str]] 
+    close_hour: Mapped[Optional[str]]
     opening_days: Mapped[Optional[str]] = mapped_column(Text)
 
     # Relationships

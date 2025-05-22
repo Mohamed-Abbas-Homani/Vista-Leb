@@ -26,8 +26,8 @@ class BusinessCreate(BaseModel):
     targeted_gender: Optional[str] = None
     cover_photo: Optional[str] = None
     profile_photo: Optional[str] = None
-    start_hour: Optional[time] = None  # Changed to time
-    close_hour: Optional[time] = None  # Changed to time
+    start_hour: Optional[str] = None  
+    close_hour: Optional[str] = None  
     opening_days: Optional[str] = None
     categories: List[UUID]
 

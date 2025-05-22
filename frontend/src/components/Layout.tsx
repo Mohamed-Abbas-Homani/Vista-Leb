@@ -46,13 +46,13 @@ const NavLinkButton = styled(Link)`
   font-weight: 600;
   font-size: 0.95rem;
   border: 1px solid #ddd;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   transition: all 0.25s ease;
 
   &:hover {
     background: #f2f6f9;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 `;
 
@@ -160,9 +160,20 @@ interface User {
   username: string;
   profile_photo?: string;
 }
+const UsernameLink = styled(Link)`
+  font-weight: 600;
+  color: #333;
+  text-decoration: none;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #10b981;
+    text-decoration: underline;
+  }
+`;
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const {user, setUser} = useStore()
+  const { user, setUser } = useStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -183,8 +194,12 @@ export default function Layout({ children }: { children: ReactNode }) {
         <TitleLink to="/">VISTA LEB</TitleLink>
         {user ? (
           <UserSection>
-            <Avatar src={user.profile_photo || defaultAvatar} alt="avatar" />
-            <span>{user.username}</span>
+            <Link to={`/profile/${user.id}`}>
+              <Avatar src={user.profile_photo ? `http://localhost:8000${user.profile_photo}`: defaultAvatar} alt="avatar" />
+            </Link>
+            <UsernameLink to={`/profile/${user.id}`}>
+              {user.username}
+            </UsernameLink>
             <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
           </UserSection>
         ) : (
@@ -200,18 +215,24 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       <Footer>
         <div>
-          <strong>VISTA LEB</strong><br />
+          <strong>VISTA LEB</strong>
+          <br />
           Empowering local visibility and connection.
         </div>
         <div>
-          <strong>Contact</strong><br />
-          Email: support@vistaleb.com<br />
+          <strong>Contact</strong>
+          <br />
+          Email: support@vistaleb.com
+          <br />
           Phone: +961 1 234 567
         </div>
         <div>
-          <strong>Links</strong><br />
-          <a href="/about-us">About Us</a><br />
-          <a href="/privacy">Privacy Policy</a><br />
+          <strong>Links</strong>
+          <br />
+          <a href="/about-us">About Us</a>
+          <br />
+          <a href="/privacy">Privacy Policy</a>
+          <br />
           <a href="/terms">Terms of Service</a>
         </div>
       </Footer>

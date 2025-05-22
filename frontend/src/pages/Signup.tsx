@@ -14,7 +14,6 @@ interface FormData {
   branch_name?: string;
   hot_line?: string;
   targeted_gender?: string;
-  cover_photo?: string;
   start_hour?: string;
   close_hour?: string;
   opening_days?: string;
@@ -143,7 +142,6 @@ const Button = styled.button`
 `;
 
 export default function Signup() {
-
   const navigate = useNavigate();
 
   const [accountType, setAccountType] = useState<"customer" | "business">(
@@ -171,7 +169,6 @@ export default function Signup() {
               branch_name: formData.branch_name,
               hot_line: formData.hot_line,
               targeted_gender: formData.targeted_gender,
-              cover_photo: formData.cover_photo,
               start_hour: formData.start_hour,
               close_hour: formData.close_hour,
               opening_days: formData.opening_days,
@@ -185,19 +182,20 @@ export default function Signup() {
     };
 
     try {
-      await axios.post("http://127.0.0.1:8000/api/v1/auth/signup", userPayload, {
-        params: { is_business: accountType === "business" },
-      });
+      await axios.post(
+        "http://127.0.0.1:8000/api/v1/auth/signup",
+        userPayload,
+        {
+          params: { is_business: accountType === "business" },
+        }
+      );
       alert("Signup successful!");
       navigate("/login"); // redirects to home page
-
     } catch (error) {
       console.error(error);
       alert("Signup failed");
     }
   };
-
-
 
   return (
     <Layout>
@@ -263,11 +261,6 @@ export default function Signup() {
               <Input
                 name="targeted_gender"
                 placeholder="Targeted Gender"
-                onChange={handleChange}
-              />
-              <Input
-                name="cover_photo"
-                placeholder="Cover Photo URL"
                 onChange={handleChange}
               />
               <Input

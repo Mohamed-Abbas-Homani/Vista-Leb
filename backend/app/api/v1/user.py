@@ -1,11 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Query
 from sqlalchemy import select
 
-from app.model.model import User, Category
+from app.model.model import Business, Customer, User, Category
 from app.core.db import db_dep
 from .category import CategoryRead
 from .dependencies import auth_dep, current_user_dep
-from .schemas.schemas import UserRead, UserUpdate
+from .schemas.schemas import BusinessRead, CustomerRead, UserCreate, UserRead, UserUpdate
 from ...core.security import get_password_hash
 from fastapi import UploadFile, File
 from uuid import UUID
@@ -60,66 +60,6 @@ async def get_user(user_id: UUID, db: db_dep):
         ],
     )
 
-
-@router.put("/{user_id}", response_model=UserRead)
-async def update_user(user_id: UUID, update: UserUpdate, db: db_dep):
-    try:
-        result = await db.execute(select(User).filter(User.id == user_id))
-        user = result.scalars().first()
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-
-        # Prepare updated fields (excluding categories and password initially)
-        update_data = update.model_dump(
-            exclude={"categories", "password"}, exclude_unset=True
-        )
-
-        for key, value in update_data.items():
-            setattr(user, key, value)
-
-        # Hash password if provided
-        if update.password:
-            user.password = get_password_hash(update.password)
-
-        # Update categories if provided
-        if update.categories is not None:
-            categories = []
-            for cat_id in update.categories:
-                category = await db.execute(
-                    select(Category).filter(Category.id == cat_id)
-                )
-                category = category.scalars().first()
-                if not category:
-                    raise HTTPException(
-                        status_code=404, detail=f"Category {cat_id} not found"
-                    )
-                categories.append(category)
-            user.categories = categories
-
-        await db.commit()
-        await db.refresh(user)
-
-        return UserRead(
-            id=user.id,
-            email=user.email,
-            username=user.username,
-            phone_number=user.phone_number,
-            address=user.address,
-            age=user.age,
-            marital_status=user.marital_status,
-            price_range=user.price_range,
-            gender=user.gender,
-            profile_photo=user.profile_photo,
-            categories=[
-                CategoryRead(id=c.id, name=c.name, key=c.key) for c in user.categories
-            ],
-        )
-
-    except Exception as e:
-        await db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
-
-
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(user_id: UUID, db: db_dep):
     result = await db.execute(select(User).filter(User.id == user_id))
@@ -131,7 +71,7 @@ async def delete_user(user_id: UUID, db: db_dep):
     return {"deleted": "success"}
 
 
-@router.post("/upload-photo", status_code=status.HTTP_200_OK)
+@router.post("/profile-picture", status_code=status.HTTP_200_OK)
 async def upload_profile_picture(
     user: current_user_dep, db: db_dep, file: UploadFile = File(...)
 ):
@@ -158,3 +98,92 @@ async def upload_profile_picture(
     await db.refresh(user)
 
     return {"filename": file.filename, "profile_photo": relative_path}
+
+@router.put("/{user_id}", response_model=UserRead)
+async def update_user(
+    user_id: UUID,
+    updated_data: UserUpdate,
+    is_business: bool,
+    db: db_dep
+):
+    try:
+        db_user = await db.get(User, user_id)
+        if not db_user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Handle category updates
+        categories = []
+        if updated_data.categories:
+            for cat_id in updated_data.categories:
+                result = await db.execute(select(Category).filter(Category.id == cat_id))
+                category = result.scalars().first()
+                if not category:
+                    raise HTTPException(status_code=404, detail=f"Category {cat_id} not found")
+                categories.append(category)
+
+        # Update base user fields
+        for field in updated_data.model_fields_set - {"categories", "password", "business", "customer", "profile_photo"}:
+            setattr(db_user, field, getattr(updated_data, field))
+
+        # Update nested Business or Customer
+        if is_business and updated_data.business:
+            if db_user.business:
+                for field, value in updated_data.business.model_dump().items():
+                    setattr(db_user.business, field, value)
+            else:
+                db_user.business = Business(**updated_data.business.model_dump())
+        elif not is_business and updated_data.customer:
+            if db_user.customer:
+                for field, value in updated_data.customer.model_dump().items():
+                    setattr(db_user.customer, field, value)
+            else:
+                db_user.customer = Customer(**updated_data.customer.model_dump())
+
+        db_user.categories = categories
+
+        await db.commit()
+        await db.refresh(db_user)
+
+        # Manual mapping of nested objects
+        business_data = None
+        if db_user.business:
+            business_data = BusinessRead(
+                branch_name=db_user.business.branch_name,
+                hot_line=db_user.business.hot_line,
+                targeted_gender=db_user.business.targeted_gender,
+                cover_photo=db_user.business.cover_photo,
+                start_hour=db_user.business.start_hour,
+                close_hour=db_user.business.close_hour,
+                opening_days=db_user.business.opening_days
+            )
+
+        customer_data = None
+        if db_user.customer:
+            customer_data = CustomerRead(
+                age=db_user.customer.age,
+                marital_status=db_user.customer.marital_status,
+                price_range=db_user.customer.price_range,
+                gender=db_user.customer.gender
+            )
+
+        return UserRead(
+            id=db_user.id,
+            email=db_user.email,
+            username=db_user.username,
+            phone_number=db_user.phone_number,
+            address=db_user.address,
+            profile_photo=db_user.profile_photo,
+            categories=[
+                CategoryRead(id=c.id, name=c.name, key=c.key)
+                for c in db_user.categories
+            ],
+            business=business_data,
+            customer=customer_data
+        )
+
+    except Exception as e:
+        print("Update Error:", e)
+        await db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+
+
