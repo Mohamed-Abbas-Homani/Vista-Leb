@@ -24,12 +24,45 @@ const Card = styled.div`
   padding: 2.5rem;
   max-width: 960px;
   width: 100%;
+  overflow: hidden;
+`;
+
+const CoverPhotoContainer = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 240px;
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s ease;
+
+  &:hover::after {
+    content: "Change Cover";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+`;
+
+const CoverPhoto = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 `;
 
 const AvatarWrapper = styled.div`
   text-align: center;
-  margin-bottom: 2rem;
+  margin: 6rem 0 2rem;
   position: relative;
+  z-index: 10;
 `;
 
 const Header = styled.div`
@@ -38,8 +71,8 @@ const Header = styled.div`
   left: 1rem;
   font-size: 1.8rem;
   font-weight: bold;
-  color: ${({ theme }) => theme.text};
   z-index: 1000;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 `;
 
 const Avatar = styled.img`
@@ -47,8 +80,15 @@ const Avatar = styled.img`
   height: 144px;
   border-radius: 50%;
   object-fit: cover;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 4px solid white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  }
 `;
 
 const HiddenInput = styled.input`
@@ -66,13 +106,23 @@ const Input = styled.input`
   width: 100%;
   padding: 0.75rem;
   border-radius: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid #ddd;
+  background: ${({ theme }) => theme.inputBg};
+  color: ${({ theme }) => theme.textColor};
+  transition: border 0.3s ease;
+
+  &:focus {
+    border-color: #4f46e5;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+  }
 `;
 
 const Label = styled.label`
   font-weight: bold;
   display: block;
   margin-bottom: 0.3rem;
+  color: ${({ theme }) => theme.textColor};
 `;
 
 const SaveButton = styled.button`
@@ -83,11 +133,25 @@ const SaveButton = styled.button`
   border-radius: 12px;
   cursor: pointer;
   font-weight: bold;
-  transition: background 0.3s ease;
+  transition: all 0.3s ease;
   margin-top: 2rem;
+  display: block;
+  width: 200px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);
 
   &:hover {
     background-color: #3c38b4;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(79, 70, 229, 0.4);
+  }
+
+  &:disabled {
+    background-color: #a5b4fc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 `;
 
@@ -98,12 +162,21 @@ const Loading = styled.div`
   color: #888;
 `;
 
+const SectionTitle = styled.h3`
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e0e7ff;
+  color: #4f46e5;
+`;
+
 const ProfilePage = () => {
   const { id } = useParams();
   const { user, setUser, token } = useStore();
   const [formData, setFormData] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user && user.id === id) {
@@ -131,10 +204,9 @@ const ProfilePage = () => {
         }
       );
       setUser(response.data);
-      // alert("Profile updated!");
       toast.success("Profile updated successfully!");
     } catch (error) {
-      alert("Failed to update profile.");
+      toast.error("Failed to update profile.");
     } finally {
       setLoading(false);
     }
@@ -144,16 +216,20 @@ const ProfilePage = () => {
     fileInputRef.current?.click();
   };
 
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !id) return;
+  const handleCoverClick = () => {
+    coverInputRef.current?.click();
+  };
+
+  const uploadPhoto = async (file: File, type: "avatar" | "cover") => {
+    if (!id) return;
 
     const uploadData = new FormData();
     uploadData.append("file", file);
+    uploadData.append("photo_type", type);
 
     try {
       const res = await axios.post(
-        `http://localhost:8000/api/v1/users/profile-picture`,
+        `http://localhost:8000/api/v1/users/upload-photo`,
         uploadData,
         {
           headers: {
@@ -163,13 +239,43 @@ const ProfilePage = () => {
         }
       );
 
-      const photo = res.data.profile_photo;
+      const photo = res.data.file_path;
 
-      if (user) setUser({ ...user, profile_photo: photo });
-      setFormData((prev) => prev && { ...prev, profile_photo: photo });
+      if (type === "avatar") {
+        if (user) setUser({ ...user, profile_photo: photo });
+        setFormData((prev) => prev && { ...prev, profile_photo: photo });
+      } else {
+        if (user)
+          setUser({
+            ...user,
+            business: { ...user.business, cover_photo: photo },
+          });
+        setFormData(
+          (prev) =>
+            prev && {
+              ...prev,
+              business: { ...prev.business, cover_photo: photo },
+            }
+        );
+      }
+
+      toast.success(
+        `${type === "avatar" ? "Profile" : "Cover"} photo updated!`
+      );
     } catch {
-      alert("Failed to upload photo.");
+      toast.error(`Failed to upload ${type} photo.`);
     }
+  };
+
+  const handlePhotoChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "avatar" | "cover"
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    await uploadPhoto(file, type);
+    e.target.value = ""; // Reset input
   };
 
   if (!formData) return <Loading>Loading profile...</Loading>;
@@ -179,17 +285,43 @@ const ProfilePage = () => {
 
   return (
     <Layout>
-      <ToastContainer />
+      <ToastContainer position="top-right" autoClose={3000} />
       <Container>
         <Card>
-          <Header>Profile</Header>
+          {isBusiness && (
+            <CoverPhotoContainer onClick={handleCoverClick}>
+              {formData.business?.cover_photo ? (
+                <CoverPhoto
+                  src={`http://localhost:8000${formData.business.cover_photo}`}
+                  alt="Cover"
+                />
+              ) : (
+                <div
+                  style={{
+                    height: "100%",
+                    background:
+                      "linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)",
+                  }}
+                />
+              )}
+              <HiddenInput
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => handlePhotoChange(e, "cover")}
+              />
+            </CoverPhotoContainer>
+          )}
+          <Header style={{ color: `${isBusiness ? "white" : "black"}` }}>
+            Profile
+          </Header>
 
           <AvatarWrapper>
             <Avatar
               src={
                 formData.profile_photo
                   ? `http://localhost:8000${formData.profile_photo}`
-                  : "https://via.placeholder.com/100"
+                  : "https://via.placeholder.com/150?text=Avatar"
               }
               alt="Profile"
               onClick={handleAvatarClick}
@@ -198,7 +330,7 @@ const ProfilePage = () => {
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              onChange={handlePhotoChange}
+              onChange={(e) => handlePhotoChange(e, "avatar")}
             />
           </AvatarWrapper>
 
@@ -240,7 +372,7 @@ const ProfilePage = () => {
 
           {isCustomer && (
             <>
-              <h3>Customer Info</h3>
+              <SectionTitle>Customer Info</SectionTitle>
               <FormGrid>
                 <div>
                   <Label>Gender</Label>
@@ -325,7 +457,7 @@ const ProfilePage = () => {
 
           {isBusiness && (
             <>
-              <h3>Business Info</h3>
+              <SectionTitle>Business Info</SectionTitle>
               <FormGrid>
                 <div>
                   <Label>Branch Name</Label>

@@ -198,7 +198,7 @@ export default function Login() {
           </InputWrapper>
 
           <Button type="submit" disabled={loading}>
-            {loading ? "Logging in..." : "Sign In"}
+            {loading ? "Logging in..." : "Log In"}
           </Button>
         </Form>
       </Container>

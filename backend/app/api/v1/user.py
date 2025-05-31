@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, status, Query
+import uuid
+from fastapi import APIRouter, HTTPException, status, Query, Form
 from sqlalchemy import select
 
 from app.model.model import Business, Customer, User, Category
@@ -71,33 +72,55 @@ async def delete_user(user_id: UUID, db: db_dep):
     return {"deleted": "success"}
 
 
-@router.post("/profile-picture", status_code=status.HTTP_200_OK)
-async def upload_profile_picture(
-    user: current_user_dep, db: db_dep, file: UploadFile = File(...)
+@router.post("/upload-photo", status_code=status.HTTP_200_OK)
+async def upload_photo(
+    user: current_user_dep,
+    db: db_dep,
+    file: UploadFile = File(...),
+    photo_type: str = Form(...)  # 'avatar' or 'cover'
 ):
-    # Check if user exists
-    user_id = user["id"]
-    result = await db.execute(select(User).filter(User.id == user_id))
-    user = result.scalars().first()
-    if not user:
+    # Validate photo type
+    if photo_type not in ["avatar", "cover"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid photo type. Must be 'avatar' or 'cover'"
+        )
+
+    # Fetch user
+    result = await db.execute(select(User).filter(User.id == user["id"]))
+    user_obj = result.scalars().first()
+    if not user_obj:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Create upload folder if it doesn't exist
-    upload_dir = Path("uploads") / str(user_id)
+    # Create upload directory
+    upload_dir = Path("uploads") / str(user["id"])
     upload_dir.mkdir(parents=True, exist_ok=True)
 
+    # Generate unique filename
+    file_ext = file.filename.split(".")[-1]
+    unique_filename = f"{photo_type}_{uuid.uuid4().hex}.{file_ext}"
+    file_path = upload_dir / unique_filename
+
     # Save file
-    file_path = upload_dir / file.filename
     with open(file_path, "wb") as buffer:
         buffer.write(await file.read())
 
-    # Update user's profile_photo
-    relative_path = f"/uploads/{user_id}/{file.filename}"
-    user.profile_photo = relative_path
-    await db.commit()
-    await db.refresh(user)
+    # Update user's photo field
+    relative_path = f"/uploads/{user['id']}/{unique_filename}"
+    
+    if photo_type == "avatar":
+        user_obj.profile_photo = relative_path
+    else:
+        user_obj.business.cover_photo = relative_path
 
-    return {"filename": file.filename, "profile_photo": relative_path}
+    await db.commit()
+    await db.refresh(user_obj)
+
+    return {
+        "message": f"{photo_type.capitalize()} photo updated successfully",
+        "file_path": relative_path,
+        "type": photo_type
+    }
 
 @router.put("/{user_id}", response_model=UserRead)
 async def update_user(
