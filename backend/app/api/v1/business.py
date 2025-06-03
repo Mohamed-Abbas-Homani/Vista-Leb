@@ -267,3 +267,39 @@ async def delete_business(business_id: UUID, db: db_dep):
     await db.delete(business)
     await db.commit()
     return {"deleted": "success"}
+
+class BusinessIdResponse(BaseModel):
+    business_id: UUID
+    user_id: UUID
+
+    class Config:
+        from_attributes = True
+
+
+# --- ROUTES ---
+@router.get("/user/{user_id}", response_model=BusinessIdResponse)
+async def get_business_by_user_id(user_id: UUID, db: db_dep):
+    """
+    Get business ID by user ID
+    """
+    try:
+        result = await db.execute(
+            select(Business).filter(Business.user_id == user_id)
+        )
+        business = result.scalars().first()
+        
+        if not business:
+            raise HTTPException(
+                status_code=404, 
+                detail="Business not found for this user"
+            )
+        
+        return BusinessIdResponse(
+            business_id=business.id,
+            user_id=user_id
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error fetching business: {str(e)}"
+        )

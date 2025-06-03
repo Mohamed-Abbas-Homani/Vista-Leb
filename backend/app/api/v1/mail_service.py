@@ -187,7 +187,7 @@ def create_contact_us_confirmation_html(name: str) -> str:
                             <td style="background-color: #f8f9ff; padding: 40px 30px; border-top: 1px solid #e1e8ff; border-radius: 0 0 10px 10px; text-align: center;">
                                 <div style="color: #667eea; font-size: 14px; margin-bottom: 20px;">
                                     <strong>Need immediate assistance?</strong><br>
-                                    Email: support@yourcompany.com | Phone: (555) 123-4567
+                                    Email: support@vista-leb.com | Phone: (555) 123-4567
                                 </div>
                                 
                                 <p style="color: #999; font-size: 12px; margin: 20px 0 0 0;">

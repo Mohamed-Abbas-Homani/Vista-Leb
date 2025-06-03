@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Query, Depends
 from sqlalchemy import select
 from typing import List, Optional
 from pydantic import BaseModel
@@ -8,6 +8,10 @@ from datetime import datetime
 from app.api.v1.dependencies import auth_dep
 from app.model.model import BusinessOffer  # Adjust the path if needed
 from app.core.db import db_dep  # Your db dependency
+
+from fastapi import UploadFile, File, Form
+import uuid
+from pathlib import Path
 
 router = APIRouter(prefix="/offers", tags=["Offers"], dependencies=[auth_dep])
 
@@ -107,3 +111,40 @@ async def delete_offer(offer_id: UUID, db: db_dep):
     await db.delete(offer)
     await db.commit()
     return {"detail": "Offer deleted successfully."}
+
+@router.post("/upload-photo-offer", status_code=status.HTTP_200_OK)
+async def upload_offer_photo(file: UploadFile = File(...)):
+    # Create general upload directory for offers
+    upload_dir = Path("uploads") / "offers"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    # Generate unique filename
+    file_ext = file.filename.split(".")[-1]
+    unique_filename = f"{uuid.uuid4().hex}.{file_ext}"
+    file_path = upload_dir / unique_filename
+
+    # Save the file
+    with open(file_path, "wb") as buffer:
+        buffer.write(await file.read())
+
+    # Construct relative URL path
+    relative_path = f"/uploads/offers/{unique_filename}"
+
+    return {
+        "message": "Offer photo uploaded successfully",
+        "file_path": relative_path,
+        "type": "offer"
+    }
+
+@router.get("/business/{business_id}", response_model=List[OfferRead])
+async def get_offers_by_business_id(
+    business_id: UUID,
+    db: db_dep,
+):
+    result = await db.execute(
+        select(BusinessOffer).filter(BusinessOffer.business_id == business_id)
+    )
+    offers = result.scalars().all()
+    if not offers:
+        raise HTTPException(status_code=404, detail="No offers found for this business ID")
+    return offers
