@@ -3,9 +3,9 @@ from fastapi import APIRouter, status
 from typing import List, Optional
 from pydantic import BaseModel, EmailStr
 
-from app.model.model import Business, Category
+from app.model.model import Business, Category, User
 from app.core.db import db_dep
-
+from sqlalchemy.orm import selectinload
 from datetime import time
 from .category import (
     CategoryRead,
@@ -61,7 +61,7 @@ class BusinessRead(BaseModel):
     start_hour: Optional[str]
     close_hour: Optional[str]
     opening_days: Optional[str]
-    categories: List[CategoryRead]
+    categories: List[UUID]
 
     class Config:
         from_attributes = True
@@ -139,8 +139,47 @@ async def create_business(business: BusinessCreate, db: db_dep):
 
 @router.get("/", response_model=List[BusinessRead])
 async def list_businesses(db: db_dep):
+    # Step 1: Fetch businesses
     result = await db.execute(select(Business))
-    return result.scalars().all()
+    businesses = result.scalars().all()
+
+    # Step 2: Fetch user_id → categories for each business
+    response = []
+    for b in businesses:
+        # Fetch categories for this business's user
+        cat_result = await db.execute(
+            select(Category).join(User.categories).where(User.id == b.user_id)
+        )
+        categories = cat_result.scalars().all()
+
+        user = await db.execute(
+            select(User).filter(User.id == b.user_id)
+        )
+        user = user.scalars().first()
+
+        # Build the response
+        response.append(
+            BusinessRead(
+                id=b.id,
+                email=user.email if user else None,
+                branch_name=b.branch_name,
+                phone_number= user.phone_number if user else None,
+                hot_line=b.hot_line,
+                address=b.address,
+                targeted_gender=b.targeted_gender,
+                cover_photo=b.cover_photo,
+                profile_photo=user.profile_photo if user else None,
+                start_hour=b.start_hour if b.start_hour else None,
+                close_hour=b.close_hour if b.close_hour else None,
+                opening_days=b.opening_days,
+                categories=[
+                    CategoryRead(id=c.id, key=c.key, name=c.name) for c in categories
+                ],
+            )
+        )
+
+    return response
+
 
 
 @router.get("/{business_id}", response_model=BusinessRead)
