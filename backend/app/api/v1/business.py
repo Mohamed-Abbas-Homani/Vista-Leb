@@ -12,7 +12,7 @@ from .category import (
 )  # Assuming you have CategoryRead schema in category.py
 from .dependencies import auth_dep
 
-router = APIRouter(prefix="/businesses", tags=["Businesses"], dependencies=[auth_dep])
+router = APIRouter(prefix="/businesses", tags=["Businesses"])
 
 
 # --- SCHEMAS ---
@@ -137,7 +137,7 @@ async def create_business(business: BusinessCreate, db: db_dep):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/", response_model=List[BusinessRead])
+@router.get("/", response_model=List[BusinessRead], dependencies=[])
 async def list_businesses(db: db_dep):
     # Step 1: Fetch businesses
     result = await db.execute(select(Business))
