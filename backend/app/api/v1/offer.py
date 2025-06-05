@@ -12,8 +12,17 @@ from app.core.db import db_dep  # Your db dependency
 from fastapi import UploadFile, File, Form
 import uuid
 from pathlib import Path
+import os
+import qrcode
 
 router = APIRouter(prefix="/offers", tags=["Offers"], dependencies=[auth_dep])
+
+def generate_qr_code(data: str, filename: str, save_dir="static/qrcodes") -> str:
+    os.makedirs(save_dir, exist_ok=True)
+    file_path = os.path.join(save_dir, f"{filename}.png")
+    img = qrcode.make(data)
+    img.save(file_path)
+    return file_path
 
 
 # --- SCHEMAS ---
@@ -42,17 +51,30 @@ class OfferRead(BaseModel):
     start_date: datetime
     end_date: datetime
     photo: Optional[str]
+    qr_code_path: Optional[str]
 
     class Config:
         from_attributes = True
+
 
 
 # --- ROUTES ---
 @router.post("/", response_model=OfferRead, status_code=status.HTTP_201_CREATED)
 async def create_offer(offer: OfferCreate, db: db_dep):
     try:
+        # Create the offer
         db_offer = BusinessOffer(**offer.dict())
+        db_offer.redemption_code = uuid.uuid4().hex  # Unique redemption code
+
         db.add(db_offer)
+        await db.flush()  # to get db_offer.id
+
+        # Generate the QR code
+        qr_data = f"http://localhost:8000/redeem/{db_offer.redemption_code}"
+        qr_filename = str(db_offer.id)
+        qr_relative_path = generate_qr_code(data=qr_data, filename=qr_filename)
+        db_offer.qr_code_path = "/" + qr_relative_path.replace("\\", "/")  # Ensure UNIX-style path
+
         await db.commit()
         await db.refresh(db_offer)
         return db_offer
@@ -148,3 +170,11 @@ async def get_offers_by_business_id(
     if not offers:
         raise HTTPException(status_code=404, detail="No offers found for this business ID")
     return offers
+
+@router.get("/redeem/{code}")
+async def redeem_offer(code: str, db: db_dep):
+    result = await db.execute(select(BusinessOffer).filter_by(redemption_code=code))
+    offer = result.scalars().first()
+    if not offer:
+        raise HTTPException(status_code=404, detail="Invalid or expired QR code")
+    return {"message": f"Offer '{offer.name}' redeemed successfully!"}

@@ -1,6 +1,7 @@
 from datetime import datetime, time
 from enum import Enum
 from typing import List, Optional
+import uuid
 
 from sqlalchemy import (
     UUID,
@@ -18,6 +19,8 @@ from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 
 from app.core.db import Base
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column
 
 # Association table for many-to-many relationship between User and Category
 user_category = Table(
@@ -120,6 +123,9 @@ class BusinessOffer(Base):
     start_date: Mapped[datetime] = mapped_column(nullable=False)
     end_date: Mapped[datetime] = mapped_column(nullable=False)
     photo: Mapped[Optional[str]] = mapped_column(Text)
+
+    redemption_code: Mapped[str] = mapped_column(String, default=lambda: uuid.uuid4().hex, unique=True)
+    qr_code_path: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     # Relationships
     business: Mapped["Business"] = relationship(back_populates="offers")

@@ -3,6 +3,8 @@ import styled from "styled-components";
 // import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import ImageCarousel from "../components/ImageCarousel";
+import { useNavigate } from "react-router-dom";
+
 
 // Type definitions
 interface Business {
@@ -169,60 +171,14 @@ const HoursInfo = styled.div`
 // Constants
 const API_BASE_URL = "http://localhost:8000";
 
-// Mock data with proper typing
-const mockBusinesses: Business[] = [
-  {
-    id: "c76e74e5",
-    email: "aa@gmail.com",
-    branch_name: "Beta Barbers",
-    phone_number: "03000000",
-    hot_line: "123-0002",
-    address: "456 Elm St",
-    targeted_gender: "male",
-    cover_photo: "/beta.jpg",
-    profile_photo: "/uploads/8b9e66d9-2f7a-49ef-812a-0aed96ddef83/girl-with-mask.png",
-    start_hour: "10:00",
-    close_hour: "19:00",
-    opening_days: "Tue-Sat",
-    categories: [],
-  },
-  {
-    id: "ad5e9bf1",
-    email: "aa@gmail.com",
-    branch_name: "Gamma Spa",
-    phone_number: "03000000",
-    hot_line: "123-0003",
-    address: "789 Oak St",
-    targeted_gender: "female",
-    cover_photo: "/gamma.jpg",
-    profile_photo: "/uploads/8b9e66d9-2f7a-49ef-812a-0aed96ddef83/girl-with-mask.png",
-    start_hour: "08:30",
-    close_hour: "17:30",
-    opening_days: "Mon-Sun",
-    categories: [],
-  },
-  {
-    id: "99fb0097",
-    email: "aa@gmail.com",
-    branch_name: "Delta Gym",
-    phone_number: "03000000",
-    hot_line: "123-0004",
-    address: "135 Pine St",
-    targeted_gender: "all",
-    cover_photo: "/delta.jpg",
-    profile_photo: "/uploads/8b9e66d9-2f7a-49ef-812a-0aed96ddef83/girl-with-mask.png",
-    start_hour: "06:00",
-    close_hour: "22:00",
-    opening_days: "Everyday",
-    categories: [],
-  },
-];
+
 
 // Main component
 const Home: React.FC = () => {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const naivigate = useNavigate();
 
   useEffect(() => {
     const fetchBusinesses = async (): Promise<Business[]> => {
@@ -257,6 +213,7 @@ const Home: React.FC = () => {
   const handleBusinessClick = (business: Business): void => {
     // Navigate to business detail page
     // router.push(`/business/${business.id}`);
+    naivigate(`/business/${business.id}`);
     console.log("Clicked:", business.branch_name);
   };
 

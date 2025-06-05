@@ -190,31 +190,35 @@ async def get_business_by_id(business_id: UUID, db: db_dep):
 
         if not db_business:
             raise HTTPException(status_code=404, detail="Business not found")
+        
+        #get user_id
+        user_id = db_business.user_id
+        fetch_user = await db.execute(
+            select(User).filter(User.id == user_id)
+        )
+        user = fetch_user.scalars().first()
+
+        # Fetch categories for this user
+        cat_result = await db.execute(
+            select(Category).join(User.categories).where(User.id == user_id)
+        )
 
         return BusinessRead(
             id=db_business.id,
-            email=db_business.email,
+            email=user.email if user else None,
             branch_name=db_business.branch_name,
-            phone_number=db_business.phone_number,
+            phone_number=user.phone_number if user else None,
             hot_line=db_business.hot_line,
             address=db_business.address,
             targeted_gender=db_business.targeted_gender,
             cover_photo=db_business.cover_photo,
-            profile_photo=db_business.profile_photo,
-            start_hour=db_business.start_hour.strftime("%H:%M:%S")
-            if db_business.start_hour
-            else None,
-            close_hour=db_business.close_hour.strftime("%H:%M:%S")
-            if db_business.close_hour
-            else None,
+            profile_photo=user.profile_photo if user else None,
+            start_hour=db_business.start_hour if db_business.start_hour else None,
+                close_hour=db_business.close_hour if db_business.close_hour else None,
             opening_days=db_business.opening_days,
             categories=[
-                CategoryRead(
-                    id=cat.id,
-                    key=cat.key,
-                    name=cat.name,
-                )
-                for cat in db_business.categories
+                CategoryRead(id=c.id, key=c.key, name=c.name)
+                for c in cat_result.scalars().all()
             ],
         )
 
