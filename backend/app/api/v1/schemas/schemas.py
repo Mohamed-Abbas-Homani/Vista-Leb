@@ -26,7 +26,7 @@ class BusinessCreate(BaseModel):
     start_hour: Optional[str] = None
     close_hour: Optional[str] = None
     opening_days: Optional[str] = None
-
+    photos: Optional[str] = None
     class Config:
         from_attributes=True
 
@@ -66,7 +66,7 @@ class BusinessRead(BaseModel):
     start_hour: Optional[str] = None
     close_hour: Optional[str] = None
     opening_days: Optional[str] = None
-
+    photos: Optional[str] = None
     class Config:
         from_attributes = True
 

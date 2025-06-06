@@ -61,26 +61,26 @@ class OfferRead(BaseModel):
 # --- ROUTES ---
 @router.post("/", response_model=OfferRead, status_code=status.HTTP_201_CREATED)
 async def create_offer(offer: OfferCreate, db: db_dep):
-    try:
+    # try:
         # Create the offer
-        db_offer = BusinessOffer(**offer.dict())
-        db_offer.redemption_code = uuid.uuid4().hex  # Unique redemption code
+    db_offer = BusinessOffer(**offer.dict())
+    db_offer.redemption_code = uuid.uuid4().hex  # Unique redemption code
 
-        db.add(db_offer)
-        await db.flush()  # to get db_offer.id
+    db.add(db_offer)
+    await db.flush()  # to get db_offer.id
 
-        # Generate the QR code
-        qr_data = f"http://localhost:8000/redeem/{db_offer.redemption_code}"
-        qr_filename = str(db_offer.id)
-        qr_relative_path = generate_qr_code(data=qr_data, filename=qr_filename)
-        db_offer.qr_code_path = "/" + qr_relative_path.replace("\\", "/")  # Ensure UNIX-style path
+    # Generate the QR code
+    qr_data = f"http://localhost:8000/redeem/{db_offer.redemption_code}"
+    qr_filename = str(db_offer.id)
+    qr_relative_path = generate_qr_code(data=qr_data, filename=qr_filename)
+    db_offer.qr_code_path = "/" + qr_relative_path.replace("\\", "/")  # Ensure UNIX-style path
 
-        await db.commit()
-        await db.refresh(db_offer)
-        return db_offer
-    except Exception as e:
-        await db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+    await db.commit()
+    await db.refresh(db_offer)
+    return db_offer
+    # except Exception as e:
+    #     await db.rollback()
+    #     raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/", response_model=List[OfferRead])

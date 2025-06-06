@@ -80,7 +80,7 @@ async def upload_photo(
     photo_type: str = Form(...)  # 'avatar' or 'cover'
 ):
     # Validate photo type
-    if photo_type not in ["avatar", "cover"]:
+    if photo_type not in ["avatar", "cover", "photo"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid photo type. Must be 'avatar' or 'cover'"
@@ -110,6 +110,8 @@ async def upload_photo(
     
     if photo_type == "avatar":
         user_obj.profile_photo = relative_path
+    elif photo_type == "photo":
+        pass
     else:
         user_obj.business.cover_photo = relative_path
 
@@ -177,7 +179,8 @@ async def update_user(
                 cover_photo=db_user.business.cover_photo,
                 start_hour=db_user.business.start_hour,
                 close_hour=db_user.business.close_hour,
-                opening_days=db_user.business.opening_days
+                opening_days=db_user.business.opening_days,
+                photos=db_user.business.photos
             )
 
         customer_data = None

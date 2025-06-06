@@ -74,6 +74,7 @@ class Business(Base):
     start_hour: Mapped[Optional[str]] 
     close_hour: Mapped[Optional[str]]
     opening_days: Mapped[Optional[str]] = mapped_column(Text)
+    photos: Mapped[Optional[str]] = mapped_column(Text)
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="business")

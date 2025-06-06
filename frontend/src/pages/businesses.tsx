@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import styled from "styled-components";
 import Layout from "../components/Layout";
 import useStore from "../store";
+import Lightbox from "../components/LightBox";
 
 // TypeScript interfaces
 interface Business {
   id: string | number;
   branch_name: string;
   address: string;
-  targeted_gender: 'male' | 'female' | 'all';
+  targeted_gender: "male" | "female" | "all";
   opening_days: string;
   start_hour: string;
   close_hour: string;
@@ -19,6 +20,7 @@ interface Business {
   hot_line: string;
   cover_photo?: string;
   profile_photo?: string;
+  photos?: string;
 }
 
 interface Offer {
@@ -32,7 +34,6 @@ interface Offer {
   qr_code_path?: string;
 }
 
-
 interface GenderBadgeProps {
   gender: string;
 }
@@ -40,6 +41,87 @@ interface GenderBadgeProps {
 interface CoverImageProps {
   src?: string;
 }
+
+const GallerySection = styled.section`
+  margin: 3rem 0;
+`;
+
+const GalleryTitle = styled.h2`
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  color: #333;
+  position: relative;
+  padding-bottom: 0.5rem;
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: #4f46e5;
+    border-radius: 3px;
+  }
+`;
+
+const GalleryGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.2rem;
+  margin-top: 1rem;
+`;
+
+const GalleryItem = styled.div`
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  aspect-ratio: 1 / 1;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+
+    &::after {
+      opacity: 1;
+    }
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+`;
+
+const GalleryImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+
+  ${GalleryItem}:hover & {
+    transform: scale(1.05);
+  }
+`;
+
+const EmptyGallery = styled.div`
+  text-align: center;
+  padding: 3rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  color: #6c757d;
+  font-size: 1.1rem;
+`;
 
 // Styled components
 const Container = styled.div`
@@ -86,7 +168,7 @@ const ImageSection = styled.div`
 const CoverImage = styled.div<CoverImageProps>`
   width: 100%;
   height: 300px;
-  background-image: url(${props => props.src ? `${'http://localhost:3001'}${props.src}` : '/default-cover.jpg'});
+  background-image: url(${(props) => props.src});
   background-size: cover;
   background-position: center;
   border-radius: 12px;
@@ -159,14 +241,14 @@ const GenderBadge = styled.span<GenderBadgeProps>`
   font-size: 0.9rem;
   font-weight: 500;
   text-transform: capitalize;
-  ${props => {
-    switch(props.gender) {
-      case 'male':
-        return 'background: #e3f2fd; color: #1976d2;';
-      case 'female':
-        return 'background: #fce4ec; color: #c2185b;';
+  ${(props) => {
+    switch (props.gender) {
+      case "male":
+        return "background: #e3f2fd; color: #1976d2;";
+      case "female":
+        return "background: #fce4ec; color: #c2185b;";
       default:
-        return 'background: #f3e5f5; color: #7b1fa2;';
+        return "background: #f3e5f5; color: #7b1fa2;";
     }
   }}
 `;
@@ -188,7 +270,7 @@ const ContactTitle = styled.h2`
 const ContactInfo = styled.div`
   display: grid;
   gap: 1rem;
-  
+
   @media (min-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -267,7 +349,6 @@ const OfferDates = styled.div`
   color: #888;
 `;
 
-
 const BusinessDetail: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -276,50 +357,62 @@ const BusinessDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [offersLoading, setOffersLoading] = useState<boolean>(true);
-  const { user, setUser, token } = useStore();
-  
+  const { token } = useStore();
 
+  // Add this state variable at the top of the BusinessDetail component
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(0);
+
+  // Add this function to handle image clicks
+  const openLightbox = (index: number) => {
+    setSelectedImage(index);
+    setLightboxOpen(true);
+  };
 
   useEffect(() => {
-  if (id) {
-    fetchBusinessDetails(id);
-    fetchBusinessOffers(id);
-  }
-}, [id]);
-
-    const fetchBusinessOffers = async (businessId: string) => {
-    try {
-
-        setOffersLoading(true);
-        const res = await fetch(`http://127.0.0.1:8000/api/v1/offers/business/${businessId}`,{
-        method: "GET", // or "POST" depending on your API
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-        }
-        });
-        if (!res.ok) throw new Error('Failed to fetch offers');
-        const data: Offer[] = await res.json();
-        setOffers(data);
-    } catch (err) {
-        console.error("Error fetching offers:", err);
-    } finally {
-        setOffersLoading(false);
+    if (id) {
+      fetchBusinessDetails(id);
+      fetchBusinessOffers(id);
     }
-    };
+  }, [id]);
 
+  const fetchBusinessOffers = async (businessId: string) => {
+    try {
+      setOffersLoading(true);
+      const res = await fetch(
+        `http://127.0.0.1:8000/api/v1/offers/business/${businessId}`,
+        {
+          method: "GET", // or "POST" depending on your API
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!res.ok) throw new Error("Failed to fetch offers");
+      const data: Offer[] = await res.json();
+      setOffers(data);
+    } catch (err) {
+      console.error("Error fetching offers:", err);
+    } finally {
+      setOffersLoading(false);
+    }
+  };
 
   const fetchBusinessDetails = async (businessId: string): Promise<void> => {
     try {
       setLoading(true);
-      const response = await fetch(`http://127.0.0.1:8000/api/v1/businesses/${businessId}`);
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/v1/businesses/${businessId}`
+      );
       if (!response.ok) {
-        throw new Error('Failed to fetch business details');
+        throw new Error("Failed to fetch business details");
       }
       const data: Business = await response.json();
       setBusiness(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : "An unknown error occurred";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -327,14 +420,17 @@ const BusinessDetail: React.FC = () => {
   };
 
   const getImageUrl = (imagePath?: string): string => {
-    if (!imagePath) return '/default-profile.jpg';
-    if (imagePath.startsWith('http')) return imagePath;
-    return `${'http://localhost:8000'}${imagePath}`;
+    console.log(imagePath);
+    if (!imagePath) return "/default-profile.jpg";
+    if (imagePath.startsWith("http")) return imagePath;
+    return `${"http://localhost:8000"}${imagePath}`;
   };
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
+  const handleImageError = (
+    e: React.SyntheticEvent<HTMLImageElement, Event>
+  ): void => {
     const target = e.target as HTMLImageElement;
-    target.src = '/default-profile.jpg';
+    target.src = "/default-profile.jpg";
   };
 
   if (loading) {
@@ -351,9 +447,7 @@ const BusinessDetail: React.FC = () => {
     return (
       <Layout>
         <Container>
-          <ErrorMessage>
-            Error loading business details: {error}
-          </ErrorMessage>
+          <ErrorMessage>Error loading business details: {error}</ErrorMessage>
         </Container>
       </Layout>
     );
@@ -363,9 +457,7 @@ const BusinessDetail: React.FC = () => {
     return (
       <Layout>
         <Container>
-          <ErrorMessage>
-            Business not found
-          </ErrorMessage>
+          <ErrorMessage>Business not found</ErrorMessage>
         </Container>
       </Layout>
     );
@@ -374,14 +466,11 @@ const BusinessDetail: React.FC = () => {
   return (
     <Layout>
       <Container>
-        <BackButton onClick={() => navigate(-1)}>
-          ← Back to Home
-        </BackButton>
-
+        <BackButton onClick={() => navigate(-1)}>← Back to Home</BackButton>
         <BusinessHeader>
           <ImageSection>
-            <CoverImage src={business.cover_photo}>
-              <ProfileImage 
+            <CoverImage src={getImageUrl(business.cover_photo)}>
+              <ProfileImage
                 src={getImageUrl(business.profile_photo)}
                 alt={business.branch_name}
                 onError={handleImageError}
@@ -391,7 +480,7 @@ const BusinessDetail: React.FC = () => {
 
           <InfoSection>
             <BusinessName>{business.branch_name}</BusinessName>
-            
+
             <InfoGrid>
               <InfoCard>
                 <InfoTitle>📍 Location</InfoTitle>
@@ -410,50 +499,84 @@ const BusinessDetail: React.FC = () => {
               <InfoCard>
                 <InfoTitle>🕒 Operating Hours</InfoTitle>
                 <InfoValue>
-                  {business.opening_days}<br/>
+                  {business.opening_days}
+                  <br />
                   {business.start_hour} - {business.close_hour}
                 </InfoValue>
               </InfoCard>
             </InfoGrid>
           </InfoSection>
         </BusinessHeader>
-
         <OffersSection>
-        <h2>Available Offers</h2>
-        {offersLoading ? (
+          <h2>Available Offers</h2>
+          {offersLoading ? (
             <LoadingSpinner>Loading offers...</LoadingSpinner>
-        ) : offers.length === 0 ? (
+          ) : offers.length === 0 ? (
             <p>No current offers for this business.</p>
-        ) : (
-            offers.map(offer => (
-            <OfferCard key={offer.id}>
+          ) : (
+            offers.map((offer) => (
+              <OfferCard key={offer.id}>
                 {offer.photo && (
-                <OfferImage
+                  <OfferImage
                     src={
-                    offer.photo.startsWith("http")
+                      offer.photo.startsWith("http")
                         ? offer.photo
                         : `http://localhost:8000${offer.photo}`
                     }
                     alt={offer.name}
                     onError={(e) =>
-                    ((e.target as HTMLImageElement).src = '/default-offer.jpg')
+                      ((e.target as HTMLImageElement).src =
+                        "/default-offer.jpg")
                     }
-                />
+                  />
                 )}
                 <OfferDetails>
-                <OfferTitle>{offer.name}</OfferTitle>
-                <OfferDescription>{offer.description}</OfferDescription>
-                <OfferDates>
-                    From: {new Date(offer.start_date).toLocaleDateString()} <br />
+                  <OfferTitle>{offer.name}</OfferTitle>
+                  <OfferDescription>{offer.description}</OfferDescription>
+                  <OfferDates>
+                    From: {new Date(offer.start_date).toLocaleDateString()}{" "}
+                    <br />
                     To: {new Date(offer.end_date).toLocaleDateString()}
-                </OfferDates>
+                  </OfferDates>
                 </OfferDetails>
-            </OfferCard>
+              </OfferCard>
             ))
-        )}
+          )}
         </OffersSection>
-
-
+        <GallerySection>
+          <GalleryTitle>Photo Gallery</GalleryTitle>
+          {business.photos ? (
+            <GalleryGrid>
+              {business.photos.split(",").map(
+                (photoUrl, index) =>
+                  photoUrl.trim() && (
+                    <GalleryItem
+                      key={index}
+                      onClick={() => openLightbox(index)}
+                    >
+                      <GalleryImage
+                        src={`http://localhost:8000${photoUrl.trim()}`}
+                        alt={`Business photo ${index + 1}`}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "/default-gallery.jpg";
+                        }}
+                      />
+                    </GalleryItem>
+                  )
+              )}
+            </GalleryGrid>
+          ) : (
+            <EmptyGallery>No photos available for this business</EmptyGallery>
+          )}
+        </GallerySection>
+        {lightboxOpen && business.photos && (
+          <Lightbox
+            photos={business.photos.split(",").filter((url) => url.trim())}
+            initialIndex={selectedImage}
+            onClose={() => setLightboxOpen(false)}
+          />
+        )}
         <ContactSection>
           <ContactTitle>Contact Information</ContactTitle>
           <ContactInfo>

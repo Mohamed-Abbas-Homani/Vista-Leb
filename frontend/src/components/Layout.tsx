@@ -212,7 +212,7 @@ const MobileNavMenu = styled(motion.div)`
 `;
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const { user, setUser } = useStore();
+  const { user, setUser, setToken } = useStore();
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
 
@@ -225,6 +225,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   const handleLogout = () => {
     setUser(null);
+    setToken("");
     navigate("/");
   };
 

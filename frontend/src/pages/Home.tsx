@@ -4,6 +4,7 @@ import styled from "styled-components";
 import Layout from "../components/Layout";
 import ImageCarousel from "../components/ImageCarousel";
 import { useNavigate } from "react-router-dom";
+import useStore from "../store";
 
 
 // Type definitions
@@ -16,6 +17,7 @@ interface Business {
   address: string;
   targeted_gender: "male" | "female" | "all";
   cover_photo: string;
+  photos?:string;
   profile_photo: string;
   start_hour: string;
   close_hour: string;
@@ -167,6 +169,109 @@ const HoursInfo = styled.div`
   font-size: 0.8rem;
   color: #666;
 `;
+// Add these styled components above the Home component
+const ModalOverlay = styled.div<{ isOpen: boolean }>`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: ${({ isOpen }) => (isOpen ? "flex" : "none")};
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: ${({ isOpen }) => (isOpen ? "fadeIn 0.3s ease" : "none")};
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 20px;
+  padding: 2.5rem;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  position: relative;
+  animation: slideUp 0.3s ease;
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(30px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+`;
+
+const ModalTitle = styled.h2`
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  color: #333;
+  text-align: center;
+`;
+
+const ModalMessage = styled.p`
+  font-size: 1.1rem;
+  color: #555;
+  margin-bottom: 2rem;
+  text-align: center;
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+`;
+
+const ModalButton = styled.button`
+  padding: 0.8rem 1.8rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const LoginButton = styled(ModalButton)`
+  background: #4f46e5;
+  color: white;
+  box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);
+
+  &:hover {
+    background: #3c38b4;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(79, 70, 229, 0.4);
+  }
+`;
+
+const SignupButton = styled(ModalButton)`
+  background: #10b981;
+  color: white;
+  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+
+  &:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(16, 185, 129, 0.4);
+  }
+`;
 
 // Constants
 const API_BASE_URL = "http://localhost:8000";
@@ -178,8 +283,35 @@ const Home: React.FC = () => {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const naivigate = useNavigate();
+  const navigate = useNavigate();
+  const {token} = useStore()
+// Inside the Home component
+const [showAuthModal, setShowAuthModal] = useState(false);
+const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
 
+const handleBusinessClick = (business: Business): void => {
+  if (token) {
+    navigate(`/business/${business.id}`);
+    console.log("Clicked:", business.branch_name);
+  } else {
+    setSelectedBusiness(business);
+    setShowAuthModal(true);
+  }
+};
+
+const handleLoginRedirect = () => {
+  setShowAuthModal(false);
+  navigate("/login", {
+    state: { redirect: `/business/${selectedBusiness?.id}` }
+  });
+};
+
+const handleSignupRedirect = () => {
+  setShowAuthModal(false);
+  navigate("/signup", {
+    state: { redirect: `/business/${selectedBusiness?.id}` }
+  });
+};
   useEffect(() => {
     const fetchBusinesses = async (): Promise<Business[]> => {
       try {
@@ -210,12 +342,12 @@ const Home: React.FC = () => {
     loadBusinesses();
   }, []);
 
-  const handleBusinessClick = (business: Business): void => {
-    // Navigate to business detail page
-    // router.push(`/business/${business.id}`);
-    naivigate(`/business/${business.id}`);
-    console.log("Clicked:", business.branch_name);
-  };
+  // const handleBusinessClick = (business: Business): void => {
+  //   // Navigate to business detail page
+  //   // router.push(`/business/${business.id}`);
+  //   navigate(`/business/${business.id}`);
+  //   console.log("Clicked:", business.branch_name);
+  // };
 
   const getImageUrl = (imagePath: string): string => {
     if (!imagePath) return "/default-profile.jpg";
@@ -293,6 +425,31 @@ const Home: React.FC = () => {
             ))}
           </BusinessGrid>
         </BusinessSection>
+      {showAuthModal && (
+  <ModalOverlay isOpen={showAuthModal} onClick={() => setShowAuthModal(false)}>
+    <ModalContent onClick={(e) => e.stopPropagation()}>
+      <ModalTitle>Authentication Required</ModalTitle>
+      <ModalMessage>
+        You need to sign up or log in to view business details.
+      </ModalMessage>
+      
+      <ModalActions>
+        <LoginButton onClick={handleLoginRedirect}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+          </svg>
+          Log In
+        </LoginButton>
+        <SignupButton onClick={handleSignupRedirect}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M6 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H1s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C9.516 10.68 8.289 10 6 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+          </svg>
+          Sign Up
+        </SignupButton>
+      </ModalActions>
+    </ModalContent>
+  </ModalOverlay>
+)}
       </Container>
     </Layout>
   );

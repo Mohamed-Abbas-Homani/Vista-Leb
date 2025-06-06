@@ -28,7 +28,8 @@ async def login(db: db_dep, form_data: OAuth2PasswordRequestForm = Depends()):
             cover_photo=db_user.business.cover_photo,
             start_hour=db_user.business.start_hour,
             close_hour=db_user.business.close_hour,
-            opening_days=db_user.business.opening_days
+            opening_days=db_user.business.opening_days,
+            photos=db_user.business.photos
         )
 
     customer_data = None

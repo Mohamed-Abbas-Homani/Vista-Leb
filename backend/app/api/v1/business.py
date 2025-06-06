@@ -26,8 +26,8 @@ class BusinessCreate(BaseModel):
     targeted_gender: Optional[str] = None
     cover_photo: Optional[str] = None
     profile_photo: Optional[str] = None
-    start_hour: Optional[str] = None  
-    close_hour: Optional[str] = None  
+    start_hour: Optional[str] = None
+    close_hour: Optional[str] = None
     opening_days: Optional[str] = None
     categories: List[UUID]
 
@@ -62,6 +62,7 @@ class BusinessRead(BaseModel):
     close_hour: Optional[str]
     opening_days: Optional[str]
     categories: List[UUID]
+    photos: Optional[str]
 
     class Config:
         from_attributes = True
@@ -114,6 +115,7 @@ async def create_business(business: BusinessCreate, db: db_dep):
             address=db_business.address,
             targeted_gender=db_business.targeted_gender,
             cover_photo=db_business.cover_photo,
+            photos=db_business.photos,
             profile_photo=db_business.profile_photo,
             start_hour=db_business.start_hour.strftime("%H:%M:%S")
             if db_business.start_hour
@@ -152,9 +154,7 @@ async def list_businesses(db: db_dep):
         )
         categories = cat_result.scalars().all()
 
-        user = await db.execute(
-            select(User).filter(User.id == b.user_id)
-        )
+        user = await db.execute(select(User).filter(User.id == b.user_id))
         user = user.scalars().first()
 
         # Build the response
@@ -163,11 +163,12 @@ async def list_businesses(db: db_dep):
                 id=b.id,
                 email=user.email if user else None,
                 branch_name=b.branch_name,
-                phone_number= user.phone_number if user else None,
+                phone_number=user.phone_number if user else None,
                 hot_line=b.hot_line,
                 address=b.address,
                 targeted_gender=b.targeted_gender,
                 cover_photo=b.cover_photo,
+                photos=b.photos,
                 profile_photo=user.profile_photo if user else None,
                 start_hour=b.start_hour if b.start_hour else None,
                 close_hour=b.close_hour if b.close_hour else None,
@@ -181,7 +182,6 @@ async def list_businesses(db: db_dep):
     return response
 
 
-
 @router.get("/{business_id}", response_model=BusinessRead)
 async def get_business_by_id(business_id: UUID, db: db_dep):
     try:
@@ -190,12 +190,10 @@ async def get_business_by_id(business_id: UUID, db: db_dep):
 
         if not db_business:
             raise HTTPException(status_code=404, detail="Business not found")
-        
-        #get user_id
+
+        # get user_id
         user_id = db_business.user_id
-        fetch_user = await db.execute(
-            select(User).filter(User.id == user_id)
-        )
+        fetch_user = await db.execute(select(User).filter(User.id == user_id))
         user = fetch_user.scalars().first()
 
         # Fetch categories for this user
@@ -212,9 +210,10 @@ async def get_business_by_id(business_id: UUID, db: db_dep):
             address=db_business.address,
             targeted_gender=db_business.targeted_gender,
             cover_photo=db_business.cover_photo,
+            photos=db_business.photos,
             profile_photo=user.profile_photo if user else None,
             start_hour=db_business.start_hour if db_business.start_hour else None,
-                close_hour=db_business.close_hour if db_business.close_hour else None,
+            close_hour=db_business.close_hour if db_business.close_hour else None,
             opening_days=db_business.opening_days,
             categories=[
                 CategoryRead(id=c.id, key=c.key, name=c.name)
@@ -311,6 +310,7 @@ async def delete_business(business_id: UUID, db: db_dep):
     await db.commit()
     return {"deleted": "success"}
 
+
 class BusinessIdResponse(BaseModel):
     business_id: UUID
     user_id: UUID
@@ -326,23 +326,16 @@ async def get_business_by_user_id(user_id: UUID, db: db_dep):
     Get business ID by user ID
     """
     try:
-        result = await db.execute(
-            select(Business).filter(Business.user_id == user_id)
-        )
+        result = await db.execute(select(Business).filter(Business.user_id == user_id))
         business = result.scalars().first()
-        
+
         if not business:
             raise HTTPException(
-                status_code=404, 
-                detail="Business not found for this user"
+                status_code=404, detail="Business not found for this user"
             )
-        
-        return BusinessIdResponse(
-            business_id=business.id,
-            user_id=user_id
-        )
+
+        return BusinessIdResponse(business_id=business.id, user_id=user_id)
     except Exception as e:
         raise HTTPException(
-            status_code=500, 
-            detail=f"Error fetching business: {str(e)}"
+            status_code=500, detail=f"Error fetching business: {str(e)}"
         )

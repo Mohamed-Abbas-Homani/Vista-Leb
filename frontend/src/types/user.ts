@@ -12,6 +12,7 @@ export interface Business {
   start_hour?: string | null;
   close_hour?: string | null;
   opening_days?: string | null;
+  photos?: string | null;
 }
 
 export interface Customer {

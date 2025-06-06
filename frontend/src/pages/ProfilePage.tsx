@@ -369,6 +369,57 @@ const PhotoPreview = styled.img`
   margin-top: 1rem;
 `;
 
+const PhotoGallery = styled.div`
+  display: flex;
+  overflow-x: auto;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding: 0.5rem 0;
+`;
+
+const PhotoThumbnail = styled.div`
+  position: relative;
+  flex: 0 0 auto;
+`;
+
+const PhotoImg = styled.img`
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const RemoveButton = styled.button`
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+  &:hover {
+    background: #d32f2f;
+  }
+`;
+
 interface OfferFormData {
   name: string;
   description: string;
@@ -376,8 +427,6 @@ interface OfferFormData {
   end_date: string;
   photo: File | null;
 }
-const storedData = localStorage.getItem("vista-store");
-
 const ProfilePage = () => {
   const { id } = useParams();
   const { user, setUser, token } = useStore();
@@ -398,7 +447,86 @@ const ProfilePage = () => {
     end_date: "",
     photo: null,
   });
+  // Add this to your component state
+  const [businessPhotos, setBusinessPhotos] = useState<string[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
+  // Initialize photos from formData
+  useEffect(() => {
+    if (formData?.business?.photos) {
+      setBusinessPhotos(
+        formData.business.photos.split(",").filter((url) => url.trim() !== "")
+      );
+    }
+  }, [formData]);
+
+  // Function to handle photo uploads
+  const handleBusinessPhotoUpload = async (files: FileList) => {
+    if (!files.length) return;
+
+    setUploadingPhotos(true);
+    const newPhotos = [...businessPhotos];
+
+    try {
+      for (const file of Array.from(files)) {
+        const uploadData = new FormData();
+        uploadData.append("file", file);
+        uploadData.append("photo_type", "photo");
+
+        const res = await axios.post(
+          `http://localhost:8000/api/v1/users/upload-photo`,
+          uploadData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        newPhotos.push(res.data.file_path);
+      }
+
+      setBusinessPhotos(newPhotos);
+
+      // Update formData with new photos
+      setFormData(
+        (prev) =>
+          prev && {
+            ...prev,
+            business: {
+              ...prev.business,
+              photos: newPhotos.join(","),
+            },
+          }
+      );
+
+      toast.success("Photos uploaded successfully!");
+    } catch (error) {
+      toast.error("Failed to upload photos");
+    } finally {
+      setUploadingPhotos(false);
+    }
+  };
+
+  // Function to remove a photo
+  const removePhoto = (index: number) => {
+    const newPhotos = [...businessPhotos];
+    newPhotos.splice(index, 1);
+    setBusinessPhotos(newPhotos);
+
+    // Update formData
+    setFormData(
+      (prev) =>
+        prev && {
+          ...prev,
+          business: {
+            ...prev.business,
+            photos: newPhotos.join(","),
+          },
+        }
+    );
+  };
   useEffect(() => {
     if (user && user.id === id) {
       setFormData(user);
@@ -478,80 +606,82 @@ const ProfilePage = () => {
   };
 
   const handleCreateOffer = async () => {
-  if (!offerFormData.name || !offerFormData.start_date || !offerFormData.end_date) {
-    toast.error("Please fill in all required fields.");
-    return;
-  }
-
-  if (!businessId) {
-    toast.error("Business ID not found. Please try refreshing the page.");
-    return;
-  }
-
-  // Helper to convert date to naive ISO string without timezone (remove trailing 'Z')
-  const formatNaiveDatetime = (date) => {
-    const d = new Date(date);
-    return d.toISOString().slice(0, 19); // "YYYY-MM-DDTHH:MM:SS"
-  };
-
-  setOfferLoading(true);
-  try {
-    let photoPath = null;
-
-    // Step 1: Upload Photo if selected
-    if (offerFormData.photo) {
-      const photoFormData = new FormData();
-      photoFormData.append("file", offerFormData.photo);
-      photoFormData.append("photo_type", "offer");
-
-      try {
-        const photoResponse = await axios.post(
-          `http://127.0.0.1:8000/api/v1/offers/upload-photo-offer`,
-          photoFormData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        photoPath = photoResponse.data?.file_path;
-      } catch (err) {
-        toast.error("Failed to upload offer photo.");
-        console.error("Photo upload error:", err);
-        return; // Exit if photo upload fails
-      }
+    if (
+      !offerFormData.name ||
+      !offerFormData.start_date ||
+      !offerFormData.end_date
+    ) {
+      toast.error("Please fill in all required fields.");
+      return;
     }
 
-    // Step 2: Create the Offer with naive datetime strings
-    const offerPayload = {
-      business_id: businessId,
-      name: offerFormData.name,
-      description: offerFormData.description || null,
-      start_date: formatNaiveDatetime(offerFormData.start_date),
-      end_date: formatNaiveDatetime(offerFormData.end_date),
-      photo: photoPath,
+    if (!businessId) {
+      toast.error("Business ID not found. Please try refreshing the page.");
+      return;
+    }
+
+    // Helper to convert date to naive ISO string without timezone (remove trailing 'Z')
+    const formatNaiveDatetime = (date: any) => {
+      const d = new Date(date);
+      return d.toISOString().slice(0, 19); // "YYYY-MM-DDTHH:MM:SS"
     };
 
-    await axios.post(`http://localhost:8000/api/v1/offers/`, offerPayload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    setOfferLoading(true);
+    try {
+      let photoPath = null;
 
-    toast.success("Offer created successfully!");
-    setIsModalOpen(false);
-    resetOfferForm();
-  } catch (error) {
-    toast.error("Failed to create offer.");
-    console.error("Error creating offer:", error);
-  } finally {
-    setOfferLoading(false);
-  }
-};
+      // Step 1: Upload Photo if selected
+      if (offerFormData.photo) {
+        const photoFormData = new FormData();
+        photoFormData.append("file", offerFormData.photo);
+        photoFormData.append("photo_type", "offer");
 
+        try {
+          const photoResponse = await axios.post(
+            `http://127.0.0.1:8000/api/v1/offers/upload-photo-offer`,
+            photoFormData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          photoPath = photoResponse.data?.file_path;
+        } catch (err) {
+          toast.error("Failed to upload offer photo.");
+          console.error("Photo upload error:", err);
+          return; // Exit if photo upload fails
+        }
+      }
 
+      // Step 2: Create the Offer with naive datetime strings
+      const offerPayload = {
+        business_id: businessId,
+        name: offerFormData.name,
+        description: offerFormData.description || null,
+        start_date: formatNaiveDatetime(offerFormData.start_date),
+        end_date: formatNaiveDatetime(offerFormData.end_date),
+        photo: photoPath,
+      };
+
+      await axios.post(`http://localhost:8000/api/v1/offers/`, offerPayload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      toast.success("Offer created successfully!");
+      setIsModalOpen(false);
+      resetOfferForm();
+    } catch (error) {
+      toast.error("Failed to create offer.");
+      console.error("Error creating offer:", error);
+    } finally {
+      setOfferLoading(false);
+    }
+  };
 
   const resetOfferForm = () => {
     setOfferFormData({
@@ -911,7 +1041,46 @@ const ProfilePage = () => {
               </FormGrid>
             </>
           )}
+          {isBusiness && (
+            <>
+              <SectionTitle>Business Photos</SectionTitle>
+              <div>
+                <Label>Add Business Photos</Label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) =>
+                    e.target.files && handleBusinessPhotoUpload(e.target.files)
+                  }
+                  disabled={uploadingPhotos}
+                  style={{ marginTop: "0.5rem" }}
+                />
+                {uploadingPhotos && (
+                  <div style={{ marginTop: "0.5rem" }}>Uploading photos...</div>
+                )}
+              </div>
 
+              {businessPhotos.length > 0 && (
+                <div style={{ marginTop: "1rem" }}>
+                  <Label>Current Photos</Label>
+                  <PhotoGallery>
+                    {businessPhotos.map((url, index) => (
+                      <PhotoThumbnail key={index}>
+                        <PhotoImg
+                          src={`http://localhost:8000${url}`}
+                          alt={`Business photo ${index + 1}`}
+                        />
+                        <RemoveButton onClick={() => removePhoto(index)}>
+                          ×
+                        </RemoveButton>
+                      </PhotoThumbnail>
+                    ))}
+                  </PhotoGallery>
+                </div>
+              )}
+            </>
+          )}
           <SaveButton onClick={handleSave} disabled={loading}>
             {loading ? "Saving..." : "Save Changes"}
           </SaveButton>
@@ -925,19 +1094,24 @@ const ProfilePage = () => {
       </Container>
 
       {/* Add Offers Modal */}
-      <ModalOverlay isOpen={isModalOpen} onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          setIsModalOpen(false);
-          resetOfferForm();
-        }
-      }}>
+      <ModalOverlay
+        isOpen={isModalOpen}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setIsModalOpen(false);
+            resetOfferForm();
+          }
+        }}
+      >
         <ModalContent>
           <ModalHeader>
             <ModalTitle>Add New Offer</ModalTitle>
-            <CloseButton onClick={() => {
-              setIsModalOpen(false);
-              resetOfferForm();
-            }}>
+            <CloseButton
+              onClick={() => {
+                setIsModalOpen(false);
+                resetOfferForm();
+              }}
+            >
               ×
             </CloseButton>
           </ModalHeader>
@@ -985,14 +1159,20 @@ const ProfilePage = () => {
 
             <FullWidthField>
               <Label>Offer Photo</Label>
-              <PhotoUploadContainer onClick={() => offerPhotoInputRef.current?.click()}>
+              <PhotoUploadContainer
+                onClick={() => offerPhotoInputRef.current?.click()}
+              >
                 {photoPreview ? (
                   <PhotoPreview src={photoPreview} alt="Offer preview" />
                 ) : (
                   <div>
-                    <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>📷</div>
+                    <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
+                      📷
+                    </div>
                     <p>Click to upload offer photo</p>
-                    <small style={{ color: "#6b7280" }}>PNG, JPG up to 10MB</small>
+                    <small style={{ color: "#6b7280" }}>
+                      PNG, JPG up to 10MB
+                    </small>
                   </div>
                 )}
               </PhotoUploadContainer>
@@ -1006,10 +1186,12 @@ const ProfilePage = () => {
           </ModalFormGrid>
 
           <ButtonGroup>
-            <CancelButton onClick={() => {
-              setIsModalOpen(false);
-              resetOfferForm();
-            }}>
+            <CancelButton
+              onClick={() => {
+                setIsModalOpen(false);
+                resetOfferForm();
+              }}
+            >
               Cancel
             </CancelButton>
             <SubmitButton onClick={handleCreateOffer} disabled={offerLoading}>
@@ -1019,7 +1201,11 @@ const ProfilePage = () => {
         </ModalContent>
       </ModalOverlay>
       {businessId && (
-        <ProfileOffers businessId={businessId} token={token} condition={offerFormData} />
+        <ProfileOffers
+          businessId={businessId}
+          token={token ?? ""}
+          condition={offerFormData}
+        />
       )}
     </Layout>
   );
