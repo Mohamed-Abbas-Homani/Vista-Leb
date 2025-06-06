@@ -42,6 +42,177 @@ interface CoverImageProps {
   src?: string;
 }
 
+// Modal Styles
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+`;
+
+const ModalTitle = styled.h2`
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  flex: 1;
+  padding-right: 1rem;
+`;
+
+const CloseButton = styled.button`
+  background: #f5f5f5;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #666;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #e0e0e0;
+    color: #333;
+  }
+`;
+
+const QRCodeContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 2rem 0;
+`;
+
+const QRCodeImage = styled.img`
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+`;
+
+const QRCodePlaceholder = styled.div`
+  width: 200px;
+  height: 200px;
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-bottom: 1rem;
+`;
+
+const OfferDescription = styled.p`
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  text-align: center;
+`;
+
+const OfferDates = styled.div`
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+`;
+
+const DateItem = styled.div`
+  margin: 0.25rem 0;
+  color: #666;
+`;
+
+const ActionButtons = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+`;
+
+const ActionButton = styled.button`
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:hover {
+    background: #4338ca;
+    transform: translateY(-1px);
+  }
+
+  &.secondary {
+    background: #6b7280;
+    
+    &:hover {
+      background: #4b5563;
+    }
+  }
+
+  &.success {
+    background: #059669;
+    
+    &:hover {
+      background: #047857;
+    }
+  }
+`;
+
+// Existing styled components (keeping all the original ones)
 const GallerySection = styled.section`
   margin: 3rem 0;
 `;
@@ -123,7 +294,6 @@ const EmptyGallery = styled.div`
   font-size: 1.1rem;
 `;
 
-// Styled components
 const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
@@ -316,6 +486,13 @@ const OfferCard = styled.div`
   margin-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
 
   @media (min-width: 768px) {
     flex-direction: row;
@@ -337,14 +514,16 @@ const OfferDetails = styled.div`
 const OfferTitle = styled.h3`
   font-size: 1.3rem;
   margin-bottom: 0.5rem;
+  color: #333;
 `;
 
-const OfferDescription = styled.p`
+const OfferDescriptionCard = styled.p`
   color: #555;
   margin-bottom: 0.5rem;
+  line-height: 1.6;
 `;
 
-const OfferDates = styled.div`
+const OfferDatesCard = styled.div`
   font-size: 0.9rem;
   color: #888;
 `;
@@ -359,14 +538,52 @@ const BusinessDetail: React.FC = () => {
   const [offersLoading, setOffersLoading] = useState<boolean>(true);
   const { token } = useStore();
 
-  // Add this state variable at the top of the BusinessDetail component
+  // Lightbox states
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
 
-  // Add this function to handle image clicks
+  // Modal states
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
+
   const openLightbox = (index: number) => {
     setSelectedImage(index);
     setLightboxOpen(true);
+  };
+
+  const openOfferModal = (offer: Offer) => {
+    setSelectedOffer(offer);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedOffer(null);
+    setCopySuccess(false);
+  };
+
+  const copyOfferLink = async () => {
+    if (!selectedOffer) return;
+    
+    const offerLink = `${window.location.origin}/offer/${selectedOffer.id}`;
+    
+    try {
+      await navigator.clipboard.writeText(offerLink);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+      // Fallback method
+      const textArea = document.createElement('textarea');
+      textArea.value = offerLink;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 3000);
+    }
   };
 
   useEffect(() => {
@@ -382,7 +599,7 @@ const BusinessDetail: React.FC = () => {
       const res = await fetch(
         `http://127.0.0.1:8000/api/v1/offers/business/${businessId}`,
         {
-          method: "GET", // or "POST" depending on your API
+          method: "GET",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -507,6 +724,7 @@ const BusinessDetail: React.FC = () => {
             </InfoGrid>
           </InfoSection>
         </BusinessHeader>
+
         <OffersSection>
           <h2>Available Offers</h2>
           {offersLoading ? (
@@ -515,7 +733,7 @@ const BusinessDetail: React.FC = () => {
             <p>No current offers for this business.</p>
           ) : (
             offers.map((offer) => (
-              <OfferCard key={offer.id}>
+              <OfferCard key={offer.id} onClick={() => openOfferModal(offer)}>
                 {offer.photo && (
                   <OfferImage
                     src={
@@ -532,17 +750,18 @@ const BusinessDetail: React.FC = () => {
                 )}
                 <OfferDetails>
                   <OfferTitle>{offer.name}</OfferTitle>
-                  <OfferDescription>{offer.description}</OfferDescription>
-                  <OfferDates>
+                  <OfferDescriptionCard>{offer.description}</OfferDescriptionCard>
+                  <OfferDatesCard>
                     From: {new Date(offer.start_date).toLocaleDateString()}{" "}
                     <br />
                     To: {new Date(offer.end_date).toLocaleDateString()}
-                  </OfferDates>
+                  </OfferDatesCard>
                 </OfferDetails>
               </OfferCard>
             ))
           )}
         </OffersSection>
+
         <GallerySection>
           <GalleryTitle>Photo Gallery</GalleryTitle>
           {business.photos ? (
@@ -570,6 +789,7 @@ const BusinessDetail: React.FC = () => {
             <EmptyGallery>No photos available for this business</EmptyGallery>
           )}
         </GallerySection>
+
         {lightboxOpen && business.photos && (
           <Lightbox
             photos={business.photos.split(",").filter((url) => url.trim())}
@@ -577,6 +797,7 @@ const BusinessDetail: React.FC = () => {
             onClose={() => setLightboxOpen(false)}
           />
         )}
+
         <ContactSection>
           <ContactTitle>Contact Information</ContactTitle>
           <ContactInfo>
@@ -595,6 +816,65 @@ const BusinessDetail: React.FC = () => {
           </ContactInfo>
         </ContactSection>
       </Container>
+
+      {/* Offer Modal */}
+      {modalOpen && selectedOffer && (
+        <ModalOverlay onClick={closeModal}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitle>{selectedOffer.name}</ModalTitle>
+              <CloseButton onClick={closeModal}>×</CloseButton>
+            </ModalHeader>
+
+            <OfferDescription>{selectedOffer.description}</OfferDescription>
+
+            <OfferDates>
+              <DateItem>
+                <strong>🗓️ Valid From:</strong>{" "}
+                {new Date(selectedOffer.start_date).toLocaleDateString()}
+              </DateItem>
+              <DateItem>
+                <strong>📅 Valid Until:</strong>{" "}
+                {new Date(selectedOffer.end_date).toLocaleDateString()}
+              </DateItem>
+            </OfferDates>
+
+            <QRCodeContainer>
+              {selectedOffer.qr_code_path ? (
+                <QRCodeImage
+                  src={
+                    selectedOffer.qr_code_path.startsWith("http")
+                      ? selectedOffer.qr_code_path
+                      : `http://localhost:8000${selectedOffer.qr_code_path}`
+                  }
+                  alt={`QR Code for ${selectedOffer.name}`}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              ) : (
+                <QRCodePlaceholder>
+                  📱
+                  <br />
+                  QR Code not available
+                </QRCodePlaceholder>
+              )}
+            </QRCodeContainer>
+
+            <ActionButtons>
+              <ActionButton
+                onClick={copyOfferLink}
+                className={copySuccess ? "success" : ""}
+              >
+                {copySuccess ? "✓ Copied!" : "🔗 Copy Link"}
+              </ActionButton>
+              <ActionButton onClick={closeModal} className="secondary">
+                Close
+              </ActionButton>
+            </ActionButtons>
+          </ModalContent>
+        </ModalOverlay>
+      )}
     </Layout>
   );
 };
