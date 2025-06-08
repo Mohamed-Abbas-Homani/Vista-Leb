@@ -3,6 +3,8 @@ import Layout from "../components/Layout";
 import { useState, ChangeEvent, FormEvent } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+
 
 interface FormData {
   [key: string]: string | number | undefined;
@@ -403,7 +405,8 @@ export default function Signup() {
           params: { is_business: accountType === "business" },
         }
       );
-      alert("Signup successful!");
+      // alert("Signup successful!");
+      toast.success("Signup successful!");
       navigate("/login");
     } catch (error) {
       console.error(error);
@@ -413,6 +416,7 @@ export default function Signup() {
 
   return (
     <Layout>
+      <ToastContainer position="top-right" autoClose={3000} />
       <Container>
         <FormWrapper>
           <FormContent>
