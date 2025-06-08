@@ -4,93 +4,156 @@ import Layout from "../components/Layout";
 import axios from "axios";
 
 const ContactWrapper = styled.div`
-  max-width: 700px;
-  margin: 3rem auto;
-  padding: 2rem 2.5rem;
+  max-width: 800px;
+  margin: 4rem auto;
+  padding: 3rem 3.5rem;
   background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 24px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, ${({ theme }) => theme.primary}, ${({ theme }) => theme.primaryDark});
+  }
 `;
 
 const Title = styled.h1`
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 2.5rem;
+  font-weight: 800;
   color: ${({ theme }) => theme.primary};
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  letter-spacing: -0.02em;
+`;
+
+const Subtitle = styled.p`
+  color: #666;
+  text-align: center;
+  margin-bottom: 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 400;
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
+`;
+
+const InputGroup = styled.div`
+  position: relative;
+  display: flex;
+  flex-direction: column;
+`;
+
+const Label = styled.label`
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.01em;
 `;
 
 const Input = styled.input`
-  padding: 0.8rem 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  border: 2px solid #e5e5e5;
+  border-radius: 12px;
   font-size: 1rem;
+  font-weight: 500;
   background-color: #fff;
   color: #000;
-  transition: border-color 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.primary};
-    box-shadow: 0 0 0 2px ${({ theme }) => theme.primary}33;
-  }
-
-  &:disabled {
-    background-color: #f5f5f5;
-    cursor: not-allowed;
-  }
-`;
-
-const TextArea = styled.textarea`
-  padding: 0.8rem 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 1rem;
-  min-height: 120px;
-  background-color: #fff;
-  color: #000;
-  resize: vertical;
-  transition: border-color 0.3s ease;
-
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.primary};
-    box-shadow: 0 0 0 2px ${({ theme }) => theme.primary}33;
-  }
-
-  &:disabled {
-    background-color: #f5f5f5;
-    cursor: not-allowed;
-  }
-`;
-
-const Button = styled.button<{ loading?: boolean }>`
-  background-color: ${({ theme }) => theme.primary};
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  position: relative;
-  min-height: 48px;
-
-  &:hover:not(:disabled) {
-    background-color: ${({ theme }) => theme.primaryDark};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.primary}22, 0 4px 12px rgba(0, 0, 0, 0.08);
     transform: translateY(-1px);
   }
 
   &:disabled {
-    background-color: #ccc;
+    background-color: #f8f8f8;
     cursor: not-allowed;
     transform: none;
+  }
+
+  &::placeholder {
+    color: #999;
+    font-weight: 400;
+  }
+`;
+
+const TextArea = styled.textarea`
+  padding: 1rem 1.2rem;
+  border: 2px solid #e5e5e5;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  min-height: 140px;
+  background-color: #fff;
+  color: #000;
+  resize: vertical;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.primary};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.primary}22, 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    background-color: #f8f8f8;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  &::placeholder {
+    color: #999;
+    font-weight: 400;
+  }
+`;
+
+const Button = styled.button<{ loading?: boolean }>`
+  background: linear-gradient(135deg, ${({ theme }) => theme.primary}, ${({ theme }) => theme.primaryDark});
+  color: white;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1.1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  min-height: 56px;
+  box-shadow: 0 4px 16px ${({ theme }) => theme.primary}33;
+  letter-spacing: 0.02em;
+  margin-top: 0.5rem;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px ${({ theme }) => theme.primary}44;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 
   ${({ loading }) =>
@@ -99,13 +162,15 @@ const Button = styled.button<{ loading?: boolean }>`
     &::after {
       content: '';
       position: absolute;
-      width: 16px;
-      height: 16px;
-      margin: auto;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      margin: -10px 0 0 -10px;
       border: 2px solid transparent;
       border-top-color: #ffffff;
       border-radius: 50%;
-      animation: spin 1s ease infinite;
+      animation: spin 0.8s linear infinite;
     }
     
     @keyframes spin {
@@ -116,18 +181,42 @@ const Button = styled.button<{ loading?: boolean }>`
 `;
 
 const Message = styled.div<{ type: 'success' | 'error' }>`
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  font-weight: 500;
+  padding: 1.2rem 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
   background-color: ${({ type }) => (type === 'success' ? '#d4edda' : '#f8d7da')};
   color: ${({ type }) => (type === 'success' ? '#155724' : '#721c24')};
-  border: 1px solid ${({ type }) => (type === 'success' ? '#c3e6cb' : '#f5c6cb')};
+  border: 2px solid ${({ type }) => (type === 'success' ? '#c3e6cb' : '#f5c6cb')};
+  box-shadow: 0 4px 12px ${({ type }) => (type === 'success' ? '#c3e6cb' : '#f5c6cb')}33;
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+`;
+
+const FormRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 interface FormData {
   name: string;
   email: string;
+  subject: string;
   message: string;
 }
 
@@ -141,6 +230,7 @@ const ContactUs = () => {
   const [formData, setFormData] = useState<FormData>({ 
     name: "", 
     email: "", 
+    subject: "",
     message: "" 
   });
   const [loading, setLoading] = useState(false);
@@ -178,7 +268,7 @@ const ContactUs = () => {
         });
         
         // Reset form
-        setFormData({ name: "", email: "", message: "" });
+        setFormData({ name: "", email: "", subject: "", message: "" });
       } else {
         throw new Error('Unexpected response status');
       }
@@ -215,7 +305,8 @@ const ContactUs = () => {
   return (
     <Layout>
       <ContactWrapper>
-        <Title>Contact Us</Title>
+        <Title>Get In Touch</Title>
+        <Subtitle>We'd love to hear from you. Send us a message and we'll respond as soon as possible.</Subtitle>
         
         {responseMessage && (
           <Message type={responseMessage.type}>
@@ -224,34 +315,64 @@ const ContactUs = () => {
         )}
 
         <Form onSubmit={handleSubmit}>
-          <Input
-            type="text"
-            name="name"
-            placeholder="Your Name"
-            value={formData.name}
-            onChange={handleChange}
-            disabled={loading}
-            required
-          />
-          <Input
-            type="email"
-            name="email"
-            placeholder="Your Email"
-            value={formData.email}
-            onChange={handleChange}
-            disabled={loading}
-            required
-          />
-          <TextArea
-            name="message"
-            placeholder="Your Message"
-            value={formData.message}
-            onChange={handleChange}
-            disabled={loading}
-            required
-          />
+          <FormRow>
+            <InputGroup>
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                type="text"
+                name="name"
+                placeholder="Enter your full name"
+                value={formData.name}
+                onChange={handleChange}
+                disabled={loading}
+                required
+              />
+            </InputGroup>
+            <InputGroup>
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                name="email"
+                placeholder="Enter your email address"
+                value={formData.email}
+                onChange={handleChange}
+                disabled={loading}
+                required
+              />
+            </InputGroup>
+          </FormRow>
+          
+          <InputGroup>
+            <Label htmlFor="subject">Subject</Label>
+            <Input
+              id="subject"
+              type="text"
+              name="subject"
+              placeholder="What's this about?"
+              value={formData.subject}
+              onChange={handleChange}
+              disabled={loading}
+              required
+            />
+          </InputGroup>
+          
+          <InputGroup>
+            <Label htmlFor="message">Message</Label>
+            <TextArea
+              id="message"
+              name="message"
+              placeholder="Tell us more about your inquiry..."
+              value={formData.message}
+              onChange={handleChange}
+              disabled={loading}
+              required
+            />
+          </InputGroup>
+          
           <Button type="submit" disabled={loading} loading={loading}>
-            {loading ? "Sending..." : "Send Message"}
+            {loading ? "Sending Message..." : "Send Message"}
           </Button>
         </Form>
       </ContactWrapper>
