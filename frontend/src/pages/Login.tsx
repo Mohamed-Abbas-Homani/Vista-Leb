@@ -460,7 +460,7 @@ export default function Login() {
                 <InputWrapper>
                   <Input
                     type="email"
-                    placeholder="Email Address"
+                    placeholder="Username"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
